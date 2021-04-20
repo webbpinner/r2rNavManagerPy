@@ -1,13 +1,13 @@
 # r2rNavManagerPy
 
 ## Overview
-This project is a Python3 port of the offical php5/Java r2rNavManager project.  With PHP5 at end-of-life it makes sense to port the very useful r2rNavManager to a more modern programming language.
+This project is a port of the offical PHP5/Java r2rNavManager project to Python3.  With PHP5 at end-of-life it made sense to port the very useful r2rNavManager to a modern/supported programming language.
 
 ## Repository Layout
-- bin Contains the various r2rNavManagerPy programs
-- lib Contains the common python classes and utility functions used in the r2rnavManagerPy programs
-- parsers Contains the parser classes used by navparse.py to interpret the raw navigation files.
-- sample_data Contains some sample data that can be used to 
+- **bin** Contains the various r2rNavManagerPy programs
+- **lib** Contains the common python classes and utility functions used in the r2rnavManagerPy programs
+- **parsers** Contains the parser classes used by navparse.py to interpret the raw navigation files.
+- **sample_data** Contains some sample data that can be used to 
 
 ## Tools
 ### navparse.py
@@ -129,10 +129,25 @@ navexport.py creates the various r2rNavManager products from a r2rnav file such 
 
 ### Instructions
 1. Clone the repository to the local machine
+    ```
+    git clone https://github.com/webbpinner/r2rNavManagerPy.git
+    ```
 2. Create a virtual python environment within the repository
+    ```
+    cd ./r2rNavManagerPy
+    python3 -m venv venv
+    ```
 3. Activate the virtual python environment
-4. Install the python packages required by r2rNavManagerPy
-
+    ```
+    source ./venv/bin/activate
+    ```
+5. Install the python packages required by r2rNavManagerPy
+    ```
+    pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org --upgrade pip
+    pip install wheel
+    pip install -r ./requirements.txt 
+    pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
+    ```
 ## Developing Parsers
 
 ## r2rnav file format.
