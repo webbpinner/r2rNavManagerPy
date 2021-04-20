@@ -152,10 +152,128 @@ navexport.py creates the various r2rNavManager products from a r2rnav file such 
 
 ## r2rnav file format.
 
+The tab-delimited r2rnav file format has been slightly changed from the original project.  The tab-delimited format has been replaced with a the comma-delimited format and optionally the files can be saved as a binary (HDF) format.  The advantage of the HDF format is faster loading by the r2rNavManagerPy utilities.
+
+The updated format also includes serveral additional columns that provide additional information and improved QA/QC.  The additional columns are:
+- **sensor_time**: the time from the sensor vs the time from the data acquisition system (DAS).  Strings like GGA include a satellite-caculated time of day.  Processing this field helps determine if there are any sequence errors in the data stream to the DAS.
+- **deltaT**: the time difference between the previous row and the current row based on the timestamp added by the DAS.
+- **sensor_deltaT**: the time difference between the previous row and the current row based on the timestamp added by the sensor.
+- **valid_order**: returns 1 if the current row is newer than the previous row based on the deltaT and sensors_deltaT data.
+- **distance**: the distance (in km) travelled between the previous row and the current row.
+- **acceleration**: the acceleration (in m/s^2) between the previous row and the current row.
+
+### Sample r2rnav format (csv-version):
+```
+iso_time,ship_longitude,ship_latitude,nmea_quality,nsv,hdop,antenna_height,valid_cksum,sensor_time,deltaT,sensor_deltaT,valid_order,distance,speed_made_good,course_made_good,acceleration
+2019-03-19T13:13:02.854000Z,-118.976031,24.727157783333332,2,15,0.8,-25.495,1,1900-01-01T13:13:02.500000Z,0 days 00:00:00.500000,0 days 00:00:00.500000,1,0.0027703888882787907,5.540777776557581,114.8831731222835,
+2019-03-19T13:13:03.368000Z,-118.97605585,24.727168466666665,2,15,0.8,-25.594,1,1900-01-01T13:13:03.000000Z,0 days 00:00:00.514000,0 days 00:00:00.500000,1,0.002776776016837137,5.553552033674274,115.32868856570866,0.024852640304849544
+2019-03-19T13:13:03.836000Z,-118.97608061666666,24.727179033333332,2,15,0.8,-25.662,1,1900-01-01T13:13:03.500000Z,0 days 00:00:00.468000,0 days 00:00:00.500000,1,0.0027636303587799606,5.527260717559921,115.16024333496449,-0.05617802588536961
+2019-03-19T13:13:04.351000Z,-118.97610543333333,24.727189616666667,2,15,0.8,-25.674,1,1900-01-01T13:13:04.000000Z,0 days 00:00:00.515000,0 days 00:00:00.500000,1,0.0027689889623471247,5.53797792469425,115.15052852676115,0.02081011094044444
+2019-03-19T13:13:04.850000Z,-118.97613013333333,24.727200033333332,2,15,0.8,-25.667,1,1900-01-01T13:13:04.500000Z,0 days 00:00:00.499000,0 days 00:00:00.500000,1,0.0027504715041766067,5.500943008353214,114.9053946244768,-0.07421826922051336
+2019-03-19T13:13:05.350000Z,-118.97615488333334,24.727210216666666,2,15,0.8,-25.598,1,1900-01-01T13:13:05.000000Z,0 days 00:00:00.500000,0 days 00:00:00.500000,1,0.002744245420962452,5.4884908419249046,114.36965936515116,-0.024904332856618083
+2019-03-19T13:13:05.833000Z,-118.9761797,24.727220333333335,2,15,0.8,-25.518,1,1900-01-01T13:13:05.500000Z,0 days 00:00:00.483000,0 days 00:00:00.500000,1,0.0027473363778585612,5.494672755717122,114.17089489708633,0.012798993358628703
+
+```
+
 ## Export Products
 
 ### bestres
+The bestres data product contains the navigation data from a r2rnav file at the same resolution as the r2rnav file.  It can be generated as csv or as geocsv which includes the geocsv header record.  It can be generated with or without QC rules applied.  The bestres product includes the following columns:
+- iso_time
+- ship_longitude
+- ship_latitude
+- nmea_quality
+- nsv
+- hdop
+- antenna_height
+- speed_made_good
+- course_made_good
+
+#### Sample
+```
+#dataset: GeoCSV 2.0
+#title: Processed Trackline Navigation Data: Best Resolution
+#field_unit: ISO_8601,degree_east,degree_north,(unitless),(unitless),(unitless),meter,meter/second,degree
+#field_type: datetime,float,float,integer,integer,float,float,float,float
+#field_standard_name: iso_time,ship_longitude,ship_latitude,nmea_quality,nsv,hdop,antenna_height,speed_made_good,course_made_good
+#field_long_name: date and time,longitude of vessel,latitude of vessel,NMEA quality indicator,number of satellite vehicles observed,horizontal dilution of precision,height of antenna above mean sea level,course made good,speed made good
+#standard_name_cv: http://www.rvdata.us/voc/fieldname
+#ellipsoid: WGS-84 (EPSG:4326)
+#delimiter: ,
+#field_missing: NAN
+#attribution: Rolling Deck to Repository (R2R) Program; http://www.rvdata.us/
+#source_repository: doi:10.17616/R39C8D
+#source_event: doi:10.7284/908273
+#source_dataset: doi:10.7284/133064
+#cruise_id: FK190315
+#creation_date: 2021-04-19T21:13:53Z
+iso_time,ship_longitude,ship_latitude,nmea_quality,nsv,hdop,antenna_height,speed_made_good,course_made_good
+2019-03-19T13:13:03.368000Z,-118.97605585,24.72716847,2,15,0.8,-25.594,NAN,NAN
+2019-03-19T13:13:03.836000Z,-118.97608062,24.72717903,2,15,0.8,-25.662,5.53,115.16
+2019-03-19T13:13:04.351000Z,-118.97610543,24.72718962,2,15,0.8,-25.674,5.54,115.151
+2019-03-19T13:13:04.850000Z,-118.97613013,24.72720003,2,15,0.8,-25.667,5.5,114.905
+```
 
 ### 1min
+The 1min data product contains the navigation data from a r2rnav file at a one-min subsample.  It can be generated as csv or as geocsv which includes the geocsv header record.  It can be generated with or without QC rules applied.  The 1min product includes the following columns:
+- iso_time
+- ship_longitude
+- ship_latitude
+- speed_made_good
+- course_made_good
+
+#### Sample
+```
+#dataset: GeoCSV 2.0
+#title: Processed Trackline Navigation Data: One Minute Resolution
+#field_unit: ISO_8601,degree_east,degree_north,meter/second,degree
+#field_type: datetime,float,float,float,float
+#field_standard_name: iso_time,ship_longitude,ship_latitude,speed_made_good,course_made_good
+#field_long_name: date and time,longitude of vessel,latitude of vessel,speed made good,course made good
+#standard_name_cv: http://www.rvdata.us/voc/fieldname
+#ellipsoid: WGS-84 (EPSG:4326)
+#delimiter: ,
+#field_missing: NAN
+#attribution: Rolling Deck to Repository (R2R) Program; http://www.rvdata.us/
+#source_repository: doi:10.17616/R39C8D
+#source_event: doi:10.7284/908273
+#source_dataset: doi:10.7284/133064
+#cruise_id: FK190315
+#creation_date: 2021-04-19T20:38:10Z
+iso_time,ship_longitude,ship_latitude,speed_made_good,course_made_good
+2019-03-19T13:13:00.000000Z,-118.97605585,24.72716847,NAN,NAN
+2019-03-19T13:14:00.000000Z,-118.97892645,24.72830543,5.27,113.559
+2019-03-19T13:15:00.000000Z,-118.98193595,24.72951233,5.54,113.822
+2019-03-19T13:16:00.000000Z,-118.98493005,24.73074472,5.53,114.378
+```
 
 ### control
+The control data product contains the navigation data from a r2rnav file but has been reduced using the Ramer–Douglas–Peucker algorithm (epsilon = 0.001).  It can be generated as csv or as geocsv which includes the geocsv header record.  It can be generated with or without QC rules applied.  The control product includes the following columns:
+- iso_time
+- ship_longitude
+- ship_latitude
+
+#### Sample
+```
+#dataset: GeoCSV 2.0
+#title: Processed Trackline Navigation Data: Control Points
+#field_unit: ISO_8601,degree_east,degree_north
+#field_type: datetime,float,float
+#field_standard_name: iso_time,ship_longitude,ship_latitude
+#field_long_name: date and time,longitude of vessel,latitude of vessel
+#standard_name_cv: http://www.rvdata.us/voc/fieldname
+#ellipsoid: WGS-84 (EPSG:4326)
+#delimiter: ,
+#field_missing: NAN
+#attribution: Rolling Deck to Repository (R2R) Program; http://www.rvdata.us/
+#source_repository: doi:10.17616/R39C8D
+#source_event: doi:10.7284/908273
+#source_dataset: doi:10.7284/133064
+#cruise_id: FK190315
+#creation_date: 2021-04-19T21:01:21Z
+iso_time,ship_longitude,ship_latitude
+2019-03-19T13:13:03.368000Z,-118.97605585,24.72716847
+2019-03-19T14:56:57.342000Z,-119.28450778,24.8488401
+2019-03-19T15:23:06.851000Z,-119.34884445,24.87714828
+2019-03-19T15:24:20.343000Z,-119.34978913,24.87956312
+```
