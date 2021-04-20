@@ -149,8 +149,9 @@ navexport.py creates the various r2rNavManager products from a r2rnav file such 
     pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
     ```
 ## Developing Parsers
+In progress
 
-## r2rnav file format.
+## r2rnav file format
 
 The tab-delimited r2rnav file format has been slightly changed from the original project.  The tab-delimited format has been replaced with a the comma-delimited format and optionally the files can be saved as a binary (HDF) format.  The advantage of the HDF format is faster loading by the r2rNavManagerPy utilities.
 
@@ -276,4 +277,39 @@ iso_time,ship_longitude,ship_latitude
 2019-03-19T14:56:57.342000Z,-119.28450778,24.8488401
 2019-03-19T15:23:06.851000Z,-119.34884445,24.87714828
 2019-03-19T15:24:20.343000Z,-119.34978913,24.87956312
+```
+
+## Typical Workflow Using Sample data
+This section describes howto use process the sample data included with the repository.
+
+1. Go to the repo dirctory:
+```
+cd ~/r2rNavManagerPy
+```
+
+2. Make a directory for the output:
+```
+mkdir ./sample_output
+```
+
+3. Use navparse.py to parse the sample data files into a r2rnav formatted file:
+```
+./venv/bin/python ./bin/navparse.py -v -f nav02 -o ./sample_output/sample_data.r2rnav ./sample_data/*.Raw 
+```
+
+4. Use navinfo to display the temporal and geographic bounds for the r2rnav file:
+```
+./venv/bin/python ./bin/navinfo.py -v ./sample_output/sample_data.r2rnav
+```
+
+5. Use navqa to display the quality assurance report for the r2rnav file:
+```
+./venv/bin/python ./bin/navqa.py -v ./sample_output/sample_data.r2rnav
+```
+
+5. Use navexport to build the various r2r nav products from the r2rnav file:
+```
+./venv/bin/python ./bin/navexport.py -v -q --meta cruise_id=FK190315 -o ./sample_output/FK190315_bestres.geocsv ./sample_output/sample_data.r2rnav
+./venv/bin/python ./bin/navexport.py -v -q --meta cruise_id=FK190315 -t 1min -o ./sample_output/FK190315_1min.geocsv ./sample_output/sample_data.r2rnav
+./venv/bin/python ./bin/navexport.py -v -q --meta cruise_id=FK190315 -t control -o ./sample_output/FK190315_control.geocsv ./sample_output/sample_data.r2rnav
 ```
