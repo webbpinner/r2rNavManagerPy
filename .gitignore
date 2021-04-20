@@ -6,4 +6,6 @@ __pycache__/
 # Environments
 venv/
 
+sample_output/
+
 .DS_Store
