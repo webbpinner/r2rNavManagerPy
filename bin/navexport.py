@@ -3,7 +3,7 @@
 #
 #         FILE:  navexport.py
 #
-#  DESCRIPTION:  Export r2r nav products based on r2rnav formated file to stdout unless -l
+#  DESCRIPTION:  Export r2r nav products based on r2rnav formatted file to stdout unless -l
 #                defined.
 #
 #         BUGS:
@@ -38,20 +38,20 @@ from lib.nav_manager import NavExport, max_deltaT, max_speed, max_accel
 # Required python code for running the script as a stand-alone utility
 # -------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Export r2r nav products based on r2rnav formated file')
-    parser.add_argument('-v', '--verbosity', dest='verbosity', default=0, action='count', help='Increase output verbosity')
-    parser.add_argument('-o', '--outfile', type=str, metavar='outfile', help='write output to specified outfile')
-    parser.add_argument('-O', '--outfileformat', type=str, metavar='outfileformat', default="geocsv", choices=["csv","geocsv"], help='outfile format')
-    parser.add_argument('-m', '--meta', type=str, metavar='metadatafile', nargs='*', help='custom metadata for geocsv header, overrides default vaules, format: "key=value"')
-    parser.add_argument('-q', '--qc', action='store_true', help='exclude bad data points')
-    parser.add_argument('-t', '--type', type=str, metavar='outputtype', default="bestres", choices=["bestres","1min","control"], help='type of output to generate')    
-    parser.add_argument('--startTS', type=lambda d: datetime.strptime(d, '%Y-%m-%dT%H:%M:%S.%fZ'), metavar='startTS', help='crop data to start timestamp')
-    parser.add_argument('--endTS', type=lambda d: datetime.strptime(d, '%Y-%m-%dT%H:%M:%S.%fZ'), metavar='endTS', help='crop data to end timestamp')
-    parser.add_argument('-g', '--gapthreshold', type=float, default=max_deltaT,  metavar='gapthreshold', help='gap threshold in seconds')
-    parser.add_argument('-s', '--speedthreshold', type=float, default=max_speed, metavar='speedthreshold', help='speed threshold in m/s')
-    parser.add_argument('-a', '--accelerationthreshold', default=max_accel, type=float, metavar='accelerationthreshold', help='acceleration threshold in m/s^2')
-    parser.add_argument('-I', '--inputformat', type=str, metavar='inputformat', default="csv", choices=["csv","hdf"], help='format type of input file')
-    parser.add_argument('input', type=str, help='input r2rnav file')
+    parser = argparse.ArgumentParser(description='Export r2r nav products based on r2rnav formatted file')
+    parser.add_argument('-v', '--verbosity', dest='verbosity', default=0, action='count', help='Increase output verbosity, default level: warning')
+    parser.add_argument('-o', '--outfile', type=str, metavar='outfile', help='Write output to specified outfile')
+    parser.add_argument('-O', '--outfileformat', type=str, metavar='outfileformat', default="geocsv", choices=["csv","geocsv"], help='The outfile format: csv or geocsv, default: geocsv')
+    parser.add_argument('-m', '--meta', type=str, metavar='metadatafile', nargs='*', help='Add custom metadata to the geocsv header, overrides default vaules, format: "key=value"')
+    parser.add_argument('-q', '--qc', action='store_true', help='Exclude bad data points before exporting data')
+    parser.add_argument('-t', '--type', type=str, metavar='outputtype', default="bestres", choices=["bestres","1min","control"], help='The type of output to generate: bestres, 1min, control, default: bestres')    
+    parser.add_argument('--startTS', type=lambda d: datetime.strptime(d, '%Y-%m-%dT%H:%M:%S.%fZ'), metavar='startTS', help='Crop data to start timestamp, format: YYYY-mm-ddTHH:MM:SS.sssZ')
+    parser.add_argument('--endTS', type=lambda d: datetime.strptime(d, '%Y-%m-%dT%H:%M:%S.%fZ'), metavar='endTS', help='Crop data to end timestamp, format: YYYY-mm-ddTHH:MM:SS.sssZ')
+    parser.add_argument('-g', '--gapthreshold', type=float, default=max_deltaT,  metavar='gapthreshold', help='Set custom gap threshold in seconds')
+    parser.add_argument('-s', '--speedthreshold', type=float, default=max_speed, metavar='speedthreshold', help='Set custom speed threshold in m/s')
+    parser.add_argument('-a', '--accelerationthreshold', default=max_accel, type=float, metavar='accelerationthreshold', help='Set custom acceleration threshold in m/s^2')
+    parser.add_argument('-I', '--inputformat', type=str, metavar='inputformat', default="csv", choices=["csv","hdf"], help='The format type of input r2rnav file: csv, hdf, default: csv')
+    parser.add_argument('input', type=str, help='The input r2rnav file')
 
     parsed_args = parser.parse_args()
 

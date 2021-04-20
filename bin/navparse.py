@@ -48,15 +48,15 @@ def check_nav_format(nav_format):
 # -------------------------------------------------------------------------------------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Parse raw position data, process and export into r2rnav intermediate format')
-    parser.add_argument('-v', '--verbosity', dest='verbosity', default=0, action='count', help='Increase output verbosity')
-    parser.add_argument('-f', '--format', type=check_nav_format, metavar='format', required=True, help='format type of input file(s)')
-    parser.add_argument('-l', '--logfile', type=str, metavar='logfile', help='write file report to specified logfile')
-    parser.add_argument('-L', '--logfileformat', type=str, default="json", choices=["text","json"], metavar='logfileformat', help='file report format')
-    parser.add_argument('-o', '--outfile', type=str, metavar='outfile', help='write output to specified outfile')
-    parser.add_argument('-O', '--outfileformat', type=str, metavar='outfileformat', default="csv", choices=["csv","hdf"], help='outfile format')
-    parser.add_argument('--startTS', type=lambda d: datetime.strptime(d, '%Y-%m-%dT%H:%M:%S.%fZ'), metavar='startTS', help='crop data to start timestamp')
-    parser.add_argument('--endTS', type=lambda d: datetime.strptime(d, '%Y-%m-%dT%H:%M:%S.%fZ'), metavar='endTS', help='crop data to end timestamp')
-    parser.add_argument('input', type=str, nargs='*', help='input files, directories and/or file globs')
+    parser.add_argument('-v', '--verbosity', dest='verbosity', default=0, action='count', help='Increase output verbosity, default level: warning')
+    parser.add_argument('-f', '--format', type=check_nav_format, metavar='format', required=True, help='Format type of input file(s)')
+    parser.add_argument('-l', '--logfile', type=str, metavar='logfile', help='Write file report to specified logfile')
+    parser.add_argument('-L', '--logfileformat', type=str, default="text", choices=["text","json"], metavar='logfileformat', help='The file report format: text or json, default: text')
+    parser.add_argument('-o', '--outfile', type=str, metavar='outfile', help='Write output to specified outfile')
+    parser.add_argument('-O', '--outfileformat', type=str, metavar='outfileformat', default="csv", choices=["csv","hdf"], help='The outfile format: csv or hdf, default: csv')
+    parser.add_argument('--startTS', type=lambda d: datetime.strptime(d, '%Y-%m-%dT%H:%M:%S.%fZ'), metavar='startTS', help='Crop data to start timestamp, format: YYYY-mm-ddTHH:MM:SS.sssZ')
+    parser.add_argument('--endTS', type=lambda d: datetime.strptime(d, '%Y-%m-%dT%H:%M:%S.%fZ'), metavar='endTS', help='Crop data to end timestamp, format: YYYY-mm-ddTHH:MM:SS.sssZ')
+    parser.add_argument('input', type=str, nargs='*', help='The input files, directories and/or file globs')
 
     parsed_args = parser.parse_args()
 

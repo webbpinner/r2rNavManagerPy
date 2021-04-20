@@ -145,7 +145,7 @@ Navigation Bounding Box Info:\n\
 \tMinimum Latitude: %f\n\
 \tMaximum Latitude: %f\n\
 Total Lines of Data: %s\
-" % (self._filename, self._startTS.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._endTS.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._startCoord[1], self._startCoord[0], self._endCoord[1], self._endCoord[0], self._bbox[2], self._bbox[0], self._bbox[3], self._bbox[1], self._totalLines)
+" % (basename(self._filename), self._startTS.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._endTS.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._startCoord[1], self._startCoord[0], self._endCoord[1], self._endCoord[0], self._bbox[2], self._bbox[0], self._bbox[3], self._bbox[1], self._totalLines)
 
 
     def to_json(self):
