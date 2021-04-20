@@ -3,7 +3,8 @@
 #
 #         FILE:  nav02_parser.py
 #
-#  DESCRIPTION:  Nav02 parser class.
+#  DESCRIPTION:  Nav02 parser class for GGA data prefixed with the SCS formatted
+#                timestamp (mm/dd/YYYY,HH:MM:SS.sss) and comma (,)
 #
 #         BUGS:
 #        NOTES:

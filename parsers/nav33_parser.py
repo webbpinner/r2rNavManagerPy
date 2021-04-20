@@ -3,7 +3,8 @@
 #
 #         FILE:  nav33_parser.py
 #
-#  DESCRIPTION:  Nav33 parser class.
+#  DESCRIPTION:  Nav33 parser class for GGA data prefixed with a ISO8601 formatted
+#                timestamp (YYYY-mm-ddTHH:MM:SS.sssZ) and comma (,)
 #
 #         BUGS:
 #        NOTES:
@@ -37,7 +38,7 @@ example_data = """
 2021-03-26T13:47:53.212068Z,$INGGA,134753.20,1911.030936,N,06918.538141,W,2,12,0.8,-0.08,M,-42.58,M,14.0,0043*77
 """
 
-raw_cols = ['timestamp','hdr','sensor_time','latitude','NS','longitude','EW','nmea_quality','nsv','hdop','antenna_height','antenna_height_m','height_wgs84','height_wgs84_m','last_update','dgps_station_checksum'] # OpenRVDAS style
+raw_cols = ['timestamp','hdr','sensor_time','latitude','NS','longitude','EW','nmea_quality','nsv','hdop','antenna_height','antenna_height_m','height_wgs84','height_wgs84_m','last_update','dgps_station_checksum']
 
 timestamp_format = "%Y-%m-%dT%H:%M:%S.%fZ" # ISO8601
 

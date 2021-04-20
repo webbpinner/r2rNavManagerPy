@@ -1,3 +1,23 @@
+#!/usr/bin/env python3
+# ----------------------------------------------------------------------------------- #
+#
+#         FILE:  utils.py
+#
+#  DESCRIPTION:  Contains various utility functions used by the r2rNavManagerPy
+#                programs.
+#
+#         BUGS:
+#        NOTES:
+#       AUTHOR:  Webb Pinner
+#      COMPANY:  OceanDataTools
+#      VERSION:  0.1
+#      CREATED:  2021-04-15
+#     REVISION:  
+#
+# LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
+#               Copyright (C) OceanDataTools 2021
+#
+# ----------------------------------------------------------------------------------- #
 import os
 import sys
 import glob
@@ -51,21 +71,19 @@ def build_file_list(path, sort=True, unique=True):
 
 ################################################################################
 def is_valid_nav_format(nav_format):
-
     """
-    Returns true if specified nav format is valid, else returns false
+    Returns true if specified nav_format is valid, else returns false
     """
 
     return nav_format in get_nav_formats()
 
 ################################################################################
 def get_nav_formats():
-
     """
     Returns list of valid nav formats
     """
 
-    valid_nav_formats = ['nav01','nav02','nav03','nav04','nav05']
+    valid_nav_formats = ['nav02','nav33']
 
     return valid_nav_formats
 
@@ -108,7 +126,12 @@ def calculate_bearing(pointA, pointB):
 
     return compass_bearing
 
+
 def read_r2rnavfile(file, format='csv'):
+    """
+    Read the specifed r2rnav formatted file.  Returns a dataframe if successful
+    Return None if the file could not be read.
+    """
 
     if format == 'hdf':
         try:

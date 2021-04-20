@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # ----------------------------------------------------------------------------------- #
 #
-#         FILE:  nav_parser.py
+#         FILE:  nav_manager.py
 #
-#  DESCRIPTION:  Parent parser class for all nav parsers.
+#  DESCRIPTION:  Contains the various classes used by the r2rNavManagerPy programs.
 #
 #         BUGS:
 #        NOTES:
@@ -56,6 +56,7 @@ class NpEncoder(json.JSONEncoder):
     """
     Custom JSON string encoder used to deal with NumPy arrays
     """
+    
     def default(self, obj): # pylint: disable=arguments-differ
 
         if isinstance(obj, np.integer):
@@ -75,7 +76,7 @@ class NpEncoder(json.JSONEncoder):
 
 class NavInfoReport():
     """
-    Class for a nav info reports
+    Class for building navinfo reports
     """    
 
     def __init__(self, filename):
@@ -124,6 +125,10 @@ class NavInfoReport():
 
 
     def build_report(self, dataframe):
+        """
+        Build the NavInfo report
+        """
+
         self._startTS = dataframe['iso_time'].iloc[0]
         self._endTS = dataframe['iso_time'].iloc[-1]
         self._startCoord = [dataframe['ship_longitude'].iloc[0],dataframe['ship_latitude'].iloc[0]]
@@ -150,7 +155,7 @@ Total Lines of Data: %s\
 
     def to_json(self):
         """
-        Return test data object as a json-formatted string
+        Return test data as json object
         """
         return {"filename": self._filename, "startTS": self._startTS.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "endTS": self._endTS.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "startCoord": self._startCoord, "endCoord": self._endCoord, "bbox": self._bbox, "totalLines": self._totalLines}
 
@@ -158,7 +163,7 @@ Total Lines of Data: %s\
 
 class NavFileReport(NavInfoReport):
     """
-    Class for a nav file reports
+    Class for building nav file reports
     """    
 
     def __init__(self, filename):
@@ -172,6 +177,10 @@ class NavFileReport(NavInfoReport):
     
 
     def build_report(self, dataframe, parseErrors=[]):
+        """
+        Build the NavFile report
+        """
+
         super().build_report(dataframe)
         self._parseErrors = parseErrors
         self._totalLines = len(dataframe.index) + len(parseErrors)
@@ -196,14 +205,14 @@ Total Lines of Data: %d\
 
     def to_json(self):
         """
-        Return test data object as a json-formatted string
+        Return test data as a json object
         """
         return {"filename": self._filename, "startTS": self._startTS.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "endTS": self._endTS.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "startCoord": self._startCoord, "endCoord": self._endCoord, "bbox": self._bbox, "parseErrors": self._parseErrors, "totalLines": self._totalLines}
 
 
 class NavQAReport():
     """
-    Class for a nav info reports
+    Class for a navqa reports
     """    
 
     def __init__(self, filename, deltaTThreshold = max_deltaT, speedThreshold = max_speed, accelerationThreshold = max_accel):
@@ -312,22 +321,23 @@ Percent Unreasonable Horizontal Accelerations: %0.3f %%\n\
     self._hdop[0],
     str(self._deltaT[1]),
     self._deltaTErrors,
-    round(100 * self._deltaTErrors/self._totalLines, 4),
+    100 * self._deltaTErrors/self._totalLines,
     self._outOfSequenceErrors,
-    round(100 * self._outOfSequenceErrors/self._totalLines, 4),
+    100 * self._outOfSequenceErrors/self._totalLines,
     self._nmeaQualtyErrors,
-    round(100 * self._nmeaQualtyErrors/self._totalLines, 4),
+    100 * self._nmeaQualtyErrors/self._totalLines,
     self._horizontalSpeedErrors,
-    round(100 * self._horizontalSpeedErrors/self._totalLines, 4),
+    100 * self._horizontalSpeedErrors/self._totalLines,
     self._horizontalAccelerationErrors,
-    round(100 * self._horizontalAccelerationErrors/self._totalLines, 4),
+    100 * self._horizontalAccelerationErrors/self._totalLines,
 )
 
 
     def to_json(self):
         """
-        Return test data object as a json-formatted string
+        Return test data json object
         """
+
         return {
             "filename": self._filename,
             "antennaAltitudeMax": self._antennaAltitude[1],
@@ -359,7 +369,7 @@ Percent Unreasonable Horizontal Accelerations: %0.3f %%\n\
 
 class NavExport():
     """
-    Class for a nav info reports
+    Class for build navexport products
     """    
 
     def __init__(self, filename, deltaTThreshold = max_deltaT, speedThreshold = max_speed, accelerationThreshold = max_accel):
@@ -385,8 +395,9 @@ class NavExport():
     @staticmethod
     def _round_data(data_frame, precision=None):
         """
-        Round the data to the specified precision
+        Round the data in the data_frame to the specified precision
         """
+
         if precision is None or bool(precision):
             try:
                 decimals = pd.Series(precision.values(), index=precision.keys())
@@ -399,13 +410,18 @@ class NavExport():
 
 
     def read_r2rnavfile(self, file_format='csv'):
+        """
+        Build the NavExport dataframe from the NavExport filename
+        """
+
         self._data = read_r2rnavfile(self._filename, file_format)
 
 
     def crop_data(self, startTS=None, endTS=None):
         """
-        Crop the dataframe to the start/end timestamps specified.
+        Crop the NavExport dataframe to the start/end timestamps specified.
         """
+
         try:
             if startTS is not None:
                 logging.debug("  start_dt: %s", startTS)
@@ -422,6 +438,9 @@ class NavExport():
 
 
     def apply_qc(self):
+        """
+        Apply the QC rules to the NavExport dataframe
+        """
 
         # remove bad gps fixes
         logging.debug("Culling bad NMEA fixes")
@@ -445,6 +464,10 @@ class NavExport():
 
 
     def build_bestres(self):
+        """
+        Build the bestres dataset from the NavExport dataframe
+        """
+
         drop_columns = [x for x in list(self._data.columns) if x not in bestres_cols]
         logging.debug("Dropping columns: %s" % drop_columns)
         self._data = self._data.drop(drop_columns, axis = 1)
@@ -457,6 +480,10 @@ class NavExport():
 
 
     def build_1min(self):
+        """
+        Build the 1min dataset from the NavExport dataframe
+        """
+
         drop_columns = [x for x in list(self._data.columns) if x not in onemin_cols]
         logging.debug("Dropping columns: %s" % drop_columns)
         self._data = self._data.drop(drop_columns, axis = 1)
@@ -500,6 +527,10 @@ class NavExport():
 
 
     def build_control(self):
+        """
+        Build the control dataset from the NavExport dataframe
+        """
+
         drop_columns = [x for x in list(self._data.columns) if x not in control_cols]
         logging.debug("Dropping columns: %s" % drop_columns)
         self._data = self._data.drop(drop_columns, axis = 1)
@@ -525,6 +556,10 @@ class NavExport():
 
 
     def geocsv_header(self, custom_meta = None):
+        """
+        Build the geocsv header, apply any custom metadata and return it as a
+        string.
+        """
 
         geocsv_header = ""
 
@@ -544,13 +579,10 @@ class NavExport():
         output.seek(0)
         print(output.read())
 
-    def to_geocsv(self):
-        # add header
-        self.to_csv()
 
 class NavParser():
     """
-    Root Class for a nav parser object
+    Root Class for a nav parsers
     """
 
     def __init__(self, name, description=None, example_data=None):
@@ -594,16 +626,22 @@ class NavParser():
 
     def parse_file(self, filepath):
         """
-        Process the given file
+        Process the given file.  This function must be overrided by subclasses
         """
         raise NotImplementedError('process_file must be implemented by subclass')
 
 
     def add_file_report(self, file_report):
+        """
+        Append the file_report to the NavParser's array of file reports.
+        """
         self._file_report.append(file_report)
 
 
     def add_dateframe(self, df):
+        """
+        Add the dataframe df to the NavParser's _df_proc dataframe
+        """
         if self._df_proc.empty:
             self._df_proc = df
         else:

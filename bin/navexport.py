@@ -35,7 +35,7 @@ from lib.utils import read_r2rnavfile
 from lib.nav_manager import NavExport, max_deltaT, max_speed, max_accel
 
 # -------------------------------------------------------------------------------------
-# Required python code for running the script as a stand-alone utility
+# Main function
 # -------------------------------------------------------------------------------------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Export r2r nav products based on r2rnav formatted file')

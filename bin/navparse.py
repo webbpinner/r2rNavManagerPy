@@ -44,7 +44,7 @@ def check_nav_format(nav_format):
         raise argparse.ArgumentTypeError("%s is an invalid nav format" % nav_format)
 
 # -------------------------------------------------------------------------------------
-# Required python code for running the script as a stand-alone utility
+# Main function
 # -------------------------------------------------------------------------------------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Parse raw position data, process and export into r2rnav intermediate format')
