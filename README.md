@@ -280,7 +280,7 @@ iso_time,ship_longitude,ship_latitude
 ```
 
 ## Typical Workflow Using Sample data
-This section describes howto use process the sample data included with the repository.
+This section describes howto process the sample data included with the repository to produce the standard suite of r2rNavManager products.
 
 1. Go to the repo dirctory:
 ```
