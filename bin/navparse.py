@@ -34,6 +34,7 @@ sys.path.append(dirname(dirname(realpath(__file__))))
 
 from lib.utils import build_file_list, is_valid_nav_format
 from lib.nav_manager import NavFileReport
+from parsers.nav01_parser import Nav01Parser
 from parsers.nav02_parser import Nav02Parser
 from parsers.nav33_parser import Nav33Parser
 
@@ -74,7 +75,9 @@ if __name__ == "__main__":
     # Set file parser
     nav_parser = None
 
-    if(parsed_args.format == 'nav02'):
+    if(parsed_args.format == 'nav01'):
+        nav_parser = Nav01Parser()
+    elif(parsed_args.format == 'nav02'):
         nav_parser = Nav02Parser()
     elif(parsed_args.format == 'nav33'):
         nav_parser = Nav33Parser()

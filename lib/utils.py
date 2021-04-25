@@ -83,12 +83,12 @@ def get_nav_formats():
     Returns list of valid nav formats
     """
 
-    valid_nav_formats = ['nav02','nav33']
+    valid_nav_formats = ['nav01','nav02','nav33']
 
     return valid_nav_formats
 
 
-def calculate_bearing(pointA, pointB):
+def calculate_bearing(pointB, pointA):
     """
     Calculates the bearing between two points.
     The formulae used is the following:
