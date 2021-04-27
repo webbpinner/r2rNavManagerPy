@@ -36,6 +36,7 @@ from lib.utils import build_file_list, is_valid_nav_format
 from lib.nav_manager import NavFileReport
 from parsers.nav01_parser import Nav01Parser
 from parsers.nav02_parser import Nav02Parser
+from parsers.nav03_parser import Nav03Parser
 from parsers.nav33_parser import Nav33Parser
 
 def check_nav_format(nav_format):
@@ -79,6 +80,8 @@ if __name__ == "__main__":
         nav_parser = Nav01Parser()
     elif(parsed_args.format == 'nav02'):
         nav_parser = Nav02Parser()
+    elif(parsed_args.format == 'nav03'):
+        nav_parser = Nav03Parser()
     elif(parsed_args.format == 'nav33'):
         nav_parser = Nav33Parser()
 

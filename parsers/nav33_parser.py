@@ -106,10 +106,9 @@ class Nav33Parser(NavParser):
                         valid_cksum = self._verify_checksum(line)
 
                     except Exception as err:
-                        parse_error_lines.append(lineno)
-                        logging.warning("Parsing error encountered on line %s", lineno)
-                        logging.debug(line)
+                        logging.warning("Parsing Error: (line: %s) %s" % (lineno, ','.join(line)))
                         logging.debug(str(err))
+                        parse_error_lines.append(lineno)
 
                     else:
                         raw_into_df['iso_time'].append(timestamp)

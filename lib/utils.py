@@ -83,7 +83,7 @@ def get_nav_formats():
     Returns list of valid nav formats
     """
 
-    valid_nav_formats = ['nav01','nav02','nav33']
+    valid_nav_formats = ['nav01','nav02','nav03','nav33']
 
     return valid_nav_formats
 
