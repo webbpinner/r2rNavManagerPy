@@ -1,24 +1,21 @@
 #!/usr/bin/env python3
-# ----------------------------------------------------------------------------------- #
-#
-#         FILE:  nav33_parser.py
-#
-#  DESCRIPTION:  Nav33 parser class for GGA data prefixed with a ISO8601 formatted
-#                timestamp (YYYY-mm-ddTHH:MM:SS.sssZ) and comma (,)
-#
-#         BUGS:
-#        NOTES:
-#       AUTHOR:  Webb Pinner
-#      COMPANY:  OceanDataTools
-#      VERSION:  0.1
-#      CREATED:  2021-04-15
-#     REVISION:  
-#
-# LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
-#               Copyright (C) OceanDataTools 2021
-#
-# ----------------------------------------------------------------------------------- #
-import os
+'''
+        FILE:  nav33_parser.py
+ DESCRIPTION:  Nav33 parser class for GGA data prefixed with a ISO8601 formatted
+               timestamp (YYYY-mm-ddTHH:MM:SS.sssZ) and comma (,)
+
+        BUGS:
+       NOTES:
+      AUTHOR:  Webb Pinner
+     COMPANY:  OceanDataTools
+     VERSION:  0.2
+     CREATED:  2021-04-15
+    REVISION:  2021-05-05
+
+LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
+              Copyright (C) OceanDataTools 2021
+'''
+
 import re
 import csv
 import sys
@@ -30,9 +27,9 @@ sys.path.append(dirname(dirname(realpath(__file__))))
 
 from lib.nav_manager import NavParser
 
-description = "Nav parser for GGA data prefixed with a ISO8601 formatted timestamp (YYYY-mm-ddTHH:MM:SS.sssZ) and comma (,)"
+DESCRIPTION = "Nav parser for GGA data prefixed with a ISO8601 formatted timestamp (YYYY-mm-ddTHH:MM:SS.sssZ) and comma (,)"
 
-example_data = """
+EXAMPLE_DATA = """
 2021-03-26T13:47:51.329619Z,$INGGA,134751.20,1911.031052,N,06918.538133,W,2,12,0.8,0.03,M,-42.58,M,12.0,0043*5A
 2021-03-26T13:47:52.207173Z,$INGGA,134752.20,1911.030998,N,06918.538134,W,2,12,0.8,-0.01,M,-42.58,M,13.0,0043*7E
 2021-03-26T13:47:53.212068Z,$INGGA,134753.20,1911.030936,N,06918.538141,W,2,12,0.8,-0.08,M,-42.58,M,14.0,0043*77
@@ -40,16 +37,19 @@ example_data = """
 
 raw_cols = ['timestamp','hdr','sensor_time','latitude','NS','longitude','EW','nmea_quality','nsv','hdop','antenna_height','antenna_height_m','height_wgs84','height_wgs84_m','last_update','dgps_station_checksum']
 
-timestamp_format = "%Y-%m-%dT%H:%M:%S.%fZ" # ISO8601
+TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ" # ISO8601
 
-sensor_timestamp_format = "%H%M%S.%f"
+SENSOR_TIMESTAMP_FORMAT = "%H%M%S.%f"
 
 class Nav33Parser(NavParser):
+    '''
+    Nav33 parser class for GGA data prefixed with a ISO8601 formatted timestamp
+    (YYYY-mm-ddTHH:MM:SS.sssZ) and comma (,)
+    '''
 
     def __init__(self):
-        super().__init__(name="nav33", description=description, example_data=example_data)
+        super().__init__(name="nav33", description=DESCRIPTION, example_data=EXAMPLE_DATA)
         self._raw_cols = raw_cols
-        self._timestamp_format = timestamp_format
 
 
     @staticmethod
@@ -68,10 +68,10 @@ class Nav33Parser(NavParser):
 
         csum = 0
 
-        for c in chksumdata:
-           # XOR'ing value of csum against the next char in line
-           # and storing the new XOR value in csum
-           csum ^= ord(c)
+        for char in chksumdata:
+            # XOR'ing value of csum against the next char in line
+            # and storing the new XOR value in csum
+            csum ^= ord(char)
 
         return 1 if hex(csum) == hex(int(cksum, 16)) else 0
 
@@ -95,8 +95,8 @@ class Nav33Parser(NavParser):
 
                     try:
 
-                        timestamp = datetime.strptime(line['timestamp'], self._timestamp_format)
-                        sensor_timestamp = datetime.strptime(line['sensor_time'], sensor_timestamp_format)
+                        timestamp = datetime.strptime(line['timestamp'], TIMESTAMP_FORMAT)
+                        sensor_timestamp = datetime.strptime(line['sensor_time'], SENSOR_TIMESTAMP_FORMAT)
                         latitude = (self._hemisphere_correction(float(line['latitude'][:2]) + float(line['latitude'][2:])/60, line['NS']))
                         longitude = (self._hemisphere_correction(float(line['longitude'][:3]) + float(line['longitude'][3:])/60, line['EW']))
                         nmea_quality = int(line['nmea_quality'])
@@ -106,7 +106,7 @@ class Nav33Parser(NavParser):
                         valid_cksum = self._verify_checksum(line)
 
                     except Exception as err:
-                        logging.warning("Parsing Error: (line: %s) %s" % (lineno, ','.join(line)))
+                        logging.warning("Parsing Error: (line: %s) %s", lineno, ','.join(line))
                         logging.debug(str(err))
                         parse_error_lines.append(lineno)
 

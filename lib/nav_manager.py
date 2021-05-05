@@ -1,34 +1,33 @@
 #!/usr/bin/env python3
-# ----------------------------------------------------------------------------------- #
-#
-#         FILE:  nav_manager.py
-#
-#  DESCRIPTION:  Contains the various classes used by the r2rNavManagerPy programs.
-#
-#         BUGS:
-#        NOTES:
-#       AUTHOR:  Webb Pinner
-#      COMPANY:  OceanDataTools
-#      VERSION:  0.1
-#      CREATED:  2021-04-15
-#     REVISION:  
-#
-# LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
-#               Copyright (C) OceanDataTools 2021
-#
-# ----------------------------------------------------------------------------------- #
+'''
+        FILE:  nav_manager.py
+ DESCRIPTION:  Contains the various classes used by the r2rNavManagerPy programs.
+
+        BUGS:
+       NOTES:
+      AUTHOR:  Webb Pinner
+     COMPANY:  OceanDataTools
+     VERSION:  0.2
+     CREATED:  2021-04-15
+    REVISION:  2021-05-05
+
+LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
+              Copyright (C) OceanDataTools 2021
+'''
 import sys
 import json
 import logging
-import numpy as np
-import pandas as pd
-from rdp import rdp
+from io import StringIO
 from datetime import datetime, timedelta
-from geopy import Point
-from geopy.distance import great_circle
 
 from os.path import dirname, realpath, basename
 sys.path.append(dirname(dirname(realpath(__file__))))
+
+import numpy as np
+import pandas as pd
+from rdp import rdp
+from geopy import Point
+from geopy.distance import great_circle
 
 from lib.utils import calculate_bearing, read_r2rnavfile
 from lib.geocsv_templates import bestres_header, onemin_header, control_header
@@ -39,11 +38,11 @@ bestres_cols = ['iso_time','ship_longitude','ship_latitude','nmea_quality','nsv'
 onemin_cols = ['iso_time','ship_longitude','ship_latitude','speed_made_good','course_made_good']
 control_cols = ['iso_time','ship_longitude','ship_latitude']
 
-max_speed = 8.7  # m/s
-max_accel = 1    # m/s^2
-max_deltaT = 300 # seconds
+MAX_SPEED = 8.7  # m/s
+MAX_ACCEL = 1    # m/s^2
+MAX_DELTA_T = 300 # seconds
 
-rdp_epsilon = 0.001
+RDP_EPSILON = 0.001
 
 rounding = {
     'ship_longitude': 8,
@@ -56,7 +55,7 @@ class NpEncoder(json.JSONEncoder):
     """
     Custom JSON string encoder used to deal with NumPy arrays
     """
-    
+
     def default(self, obj): # pylint: disable=arguments-differ
 
         if isinstance(obj, np.integer):
@@ -77,51 +76,72 @@ class NpEncoder(json.JSONEncoder):
 class NavInfoReport():
     """
     Class for building navinfo reports
-    """    
+    """
 
     def __init__(self, filename):
         self._filename = filename
-        self._startTS = None
-        self._endTS = None
-        self._startCoord = [None, None]
-        self._endCoord = [None, None]
+        self._start_ts = None
+        self._end_ts = None
+        self._start_coord = [None, None]
+        self._end_coord = [None, None]
         self._bbox = [ None, None, None, None]
-        self._totalLines = None
+        self._total_lines = None
 
 
     @property
     def filename(self):
+        '''
+        Getter function for self._filename
+        '''
         return self._filename
-    
-
-    @property
-    def startTS(self):
-        return self._startTS
 
 
     @property
-    def endTS(self):
-        return self._endTS
+    def start_ts(self):
+        '''
+        Getter function for self._start_ts
+        '''
+        return self._start_ts
 
 
     @property
-    def startCoord(self):
-        return self._startCoord
+    def end_ts(self):
+        '''
+        Getter function for self._end_ts
+        '''
+        return self._end_ts
 
 
     @property
-    def endCoord(self):
-        return self._endCoord
+    def start_coord(self):
+        '''
+        Getter function for self._start_coord
+        '''
+        return self._start_coord
+
+
+    @property
+    def end_coord(self):
+        '''
+        Getter function for self._end_coord
+        '''
+        return self._end_coord
 
 
     @property
     def bbox(self):
+        '''
+        Getter function for self._bbox
+        '''
         return self._bbox
 
 
     @property
-    def totalLines(self):
-        return self._totalLines
+    def total_lines(self):
+        '''
+        Getter function for self._total_lines
+        '''
+        return self._total_lines
 
 
     def build_report(self, dataframe):
@@ -129,12 +149,12 @@ class NavInfoReport():
         Build the NavInfo report
         """
 
-        self._startTS = dataframe['iso_time'].iloc[0]
-        self._endTS = dataframe['iso_time'].iloc[-1]
-        self._startCoord = [dataframe['ship_longitude'].iloc[0],dataframe['ship_latitude'].iloc[0]]
-        self._endCoord = [dataframe['ship_longitude'].iloc[-1],dataframe['ship_latitude'].iloc[-1]]
+        self._start_ts = dataframe['iso_time'].iloc[0]
+        self._end_ts = dataframe['iso_time'].iloc[-1]
+        self._start_coord = [dataframe['ship_longitude'].iloc[0],dataframe['ship_latitude'].iloc[0]]
+        self._end_coord = [dataframe['ship_longitude'].iloc[-1],dataframe['ship_latitude'].iloc[-1]]
         self._bbox = [dataframe['ship_longitude'].max(),dataframe['ship_latitude'].max(),dataframe['ship_longitude'].min(),dataframe['ship_latitude'].min()]
-        self._totalLines = len(dataframe.index)
+        self._total_lines = len(dataframe.index)
 
 
     def __str__(self):
@@ -150,40 +170,47 @@ Navigation Bounding Box Info:\n\
 \tMinimum Latitude: %f\n\
 \tMaximum Latitude: %f\n\
 Total Lines of Data: %s\
-" % (basename(self._filename), self._startTS.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._endTS.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._startCoord[1], self._startCoord[0], self._endCoord[1], self._endCoord[0], self._bbox[2], self._bbox[0], self._bbox[3], self._bbox[1], self._totalLines)
+" % (basename(self._filename), self._start_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._end_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._start_coord[1], self._start_coord[0], self._end_coord[1], self._end_coord[0], self._bbox[2], self._bbox[0], self._bbox[3], self._bbox[1], self._total_lines)
 
 
     def to_json(self):
         """
         Return test data as json object
         """
-        return {"filename": self._filename, "startTS": self._startTS.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "endTS": self._endTS.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "startCoord": self._startCoord, "endCoord": self._endCoord, "bbox": self._bbox, "totalLines": self._totalLines}
+        return {"filename": self._filename, "startTS": self._start_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "endTS": self._end_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "startCoord": self._start_coord, "endCoord": self._end_coord, "bbox": self._bbox, "totalLines": self._total_lines}
 
 
 
 class NavFileReport(NavInfoReport):
     """
     Class for building nav file reports
-    """    
+    """
 
     def __init__(self, filename):
         super().__init__(filename=filename)
-        self._parseErrors = []
+        self._parse_errors = []
 
 
     @property
-    def parseErrors(self):
-        return self._parseErrors
-    
+    def parse_errors(self):
+        '''
+        Getter function for self._parse_errors
+        '''
+        return self._parse_errors
 
-    def build_report(self, dataframe, parseErrors=[]):
+
+    def build_report(self, dataframe, **kwargs):
         """
         Build the NavFile report
         """
 
+        try:
+            parse_errors = kwargs.pop('parse_errors')
+        except KeyError:
+            parse_errors = []
+
+        self._total_lines = len(dataframe.index) + len(parse_errors)
         super().build_report(dataframe)
-        self._parseErrors = parseErrors
-        self._totalLines = len(dataframe.index) + len(parseErrors)
 
 
     def __str__(self):
@@ -200,73 +227,76 @@ Navigation Bounding Box Info:\n\
 \tMaximum Latitude: %f\n\
 Parsing Errors: %d\n\
 Total Lines of Data: %d\
-" % (self._filename, self._startTS.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._endTS.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._startCoord[1], self._startCoord[0], self._endCoord[1], self._endCoord[0], self._bbox[2], self._bbox[0], self._bbox[3], self._bbox[1], len(self._parseErrors), self._totalLines)
+" % (self._filename, self._start_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._end_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._start_coord[1], self._start_coord[0], self._end_coord[1], self._end_coord[0], self._bbox[2], self._bbox[0], self._bbox[3], self._bbox[1], len(self._parse_errors), self._total_lines)
 
 
     def to_json(self):
         """
         Return test data as a json object
         """
-        return {"filename": self._filename, "startTS": self._startTS.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "endTS": self._endTS.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "startCoord": self._startCoord, "endCoord": self._endCoord, "bbox": self._bbox, "parseErrors": self._parseErrors, "totalLines": self._totalLines}
+        return {"filename": self._filename, "startTS": self._start_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "endTS": self._end_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "startCoord": self._start_coord, "endCoord": self._end_coord, "bbox": self._bbox, "parse_errors": self._parse_errors, "totalLines": self._total_lines}
 
 
-class NavQAReport():
+class NavQAReport(): # pylint: disable=too-many-instance-attributes
     """
     Class for a navqa reports
-    """    
+    """
 
-    def __init__(self, filename, deltaTThreshold = max_deltaT, speedThreshold = max_speed, accelerationThreshold = max_accel):
+    def __init__(self, filename, delta_t_threshold = MAX_DELTA_T, speed_threshold = MAX_SPEED, acceleration_threshold = MAX_ACCEL):
 
         # The filename
         self._filename = filename
 
         # Total data rows
-        self._totalLines = None
+        self._total_lines = None
 
         # The QA thresholds
-        self._deltaTThreshold = pd.Timedelta('%d seconds' % deltaTThreshold)
-        self._horizontalSpeedThreshold = speedThreshold
-        self._horzontalAccelerationThreshold = accelerationThreshold
+        self._delta_t_threshold = pd.Timedelta("{} seconds".format(delta_t_threshold))
+        self._horizontal_speed_threshold = speed_threshold
+        self._horzontal_acceleration_threshold = acceleration_threshold
 
         # The QA min/max
-        self._antennaAltitude = [ None, None ]
-        self._horizontalSpeed = [ None, None ]
-        self._horizontalAcceleration = [ None, None ]
-        self._horizontalSpeed = [ None, None ]
-        self._distanceFromPort = [ None, None ]
+        self._antenna_altitude = [ None, None ]
+        self._horizontal_speed = [ None, None ]
+        self._horizontal_acceleration = [ None, None ]
+        self._horizontal_speed = [ None, None ]
+        self._distance_from_port = [ None, None ]
         self._timestamps = [ None, None ]
-        self._satellites = [ None, None ]
+        self._nsv = [ None, None ]
         self._hdop = [ None, None ]
-        self._deltaT = [ None, None ]
+        self._delta_t = [ None, None ]
 
         # The QA errors
-        self._deltaTErrors = None
-        self._outOfSequenceError = None
-        self._nmeaQualtyErrors = None
-        self._horizontalSpeedErrors = None
-        self._horizontalAccelerationErrors = None
-        self._cksumErrors = None
+        self._delta_t_errors = None
+        self._out_of_sequence_errors = None
+        self._nmea_qualty_errors = None
+        self._horizontal_speed_errors = None
+        self._horizontal_acceleration_errors = None
+        self._cksum_errors = None
 
 
     def build_report(self, dataframe):
+        '''
+        Build the navqa report.
+        '''
 
-        self._totalLines = len(dataframe.index)
+        self._total_lines = len(dataframe.index)
 
-        self._antennaAltitude = [ dataframe['antenna_height'].min(), dataframe['antenna_height'].max() ]
-        self._horizontalSpeed = [ dataframe['speed_made_good'].min(), dataframe['speed_made_good'].max() ]
-        self._horizontalAcceleration = [ dataframe['acceleration'].min(), dataframe['acceleration'].max() ]
-        self._distanceFromPort = [ 0, 0 ]
+        self._antenna_altitude = [ dataframe['antenna_height'].min(), dataframe['antenna_height'].max() ]
+        self._horizontal_speed = [ dataframe['speed_made_good'].min(), dataframe['speed_made_good'].max() ]
+        self._horizontal_acceleration = [ dataframe['acceleration'].min(), dataframe['acceleration'].max() ]
+        self._distance_from_port = [ 0, 0 ]
         self._timestamps = [ dataframe['iso_time'].iloc[0], dataframe['iso_time'].iloc[-1] ]
         self._nsv = [ int(dataframe['nsv'].min()), int(dataframe['nsv'].max()) ]
         self._hdop = [ dataframe['hdop'].min(), dataframe['hdop'].max() ]
-        self._deltaT = [ dataframe['deltaT'].min(), dataframe['deltaT'].max() ]
+        self._delta_t = [ dataframe['deltaT'].min(), dataframe['deltaT'].max() ]
 
-        self._deltaTErrors = len(dataframe[(dataframe['deltaT'] > self._deltaTThreshold)])
-        self._outOfSequenceErrors = len(dataframe[(dataframe['valid_order'] == 0)])
-        self._nmeaQualtyErrors = self._totalLines - len(dataframe[dataframe['nmea_quality'].between(1,3)])
-        self._horizontalSpeedErrors = len(dataframe[(dataframe['speed_made_good'] > self._horizontalSpeedThreshold)])
-        self._horizontalAccelerationErrors = len(dataframe[(dataframe['acceleration'] > self._horzontalAccelerationThreshold)])
-        self._cksumErrors = len(dataframe[(dataframe['valid_cksum'] == 0)])
+        self._delta_t_errors = len(dataframe[(dataframe['deltaT'] > self._delta_t_threshold)])
+        self._out_of_sequence_errors = len(dataframe[(dataframe['valid_order'] == 0)])
+        self._nmea_qualty_errors = self._total_lines - len(dataframe[dataframe['nmea_quality'].between(1,3)])
+        self._horizontal_speed_errors = len(dataframe[(dataframe['speed_made_good'] > self._horizontal_speed_threshold)])
+        self._horizontal_acceleration_errors = len(dataframe[(dataframe['acceleration'] > self._horzontal_acceleration_threshold)])
+        self._cksum_errors = len(dataframe[(dataframe['valid_cksum'] == 0)])
 
 
     def __str__(self):
@@ -305,31 +335,31 @@ Percent Unreasonable Horizontal Speeds: %0.3f %%\n\
 Number of Horizontal Accelerations Exceeding Threshold: %d\n\
 Percent Unreasonable Horizontal Accelerations: %0.3f %%\n\
 " % (basename(self._filename),
-    self._antennaAltitude[1],
-    self._antennaAltitude[0],
-    self._horizontalSpeed[1],
-    self._horizontalSpeed[0],
-    self._horizontalAcceleration[1],
-    self._horizontalAcceleration[0],
-    self._distanceFromPort[0],
-    self._distanceFromPort[1],
+    self._antenna_altitude[1],
+    self._antenna_altitude[0],
+    self._horizontal_speed[1],
+    self._horizontal_speed[0],
+    self._horizontal_acceleration[1],
+    self._horizontal_acceleration[0],
+    self._distance_from_port[0],
+    self._distance_from_port[1],
     self._timestamps[0].strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
     self._timestamps[1].strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
     self._nsv[1],
     self._nsv[0],
     self._hdop[1],
     self._hdop[0],
-    str(self._deltaT[1]),
-    self._deltaTErrors,
-    100 * self._deltaTErrors/self._totalLines,
-    self._outOfSequenceErrors,
-    100 * self._outOfSequenceErrors/self._totalLines,
-    self._nmeaQualtyErrors,
-    100 * self._nmeaQualtyErrors/self._totalLines,
-    self._horizontalSpeedErrors,
-    100 * self._horizontalSpeedErrors/self._totalLines,
-    self._horizontalAccelerationErrors,
-    100 * self._horizontalAccelerationErrors/self._totalLines,
+    str(self._delta_t[1]),
+    self._delta_t_errors,
+    100 * self._delta_t_errors/self._total_lines,
+    self._out_of_sequence_errors,
+    100 * self._out_of_sequence_errors/self._total_lines,
+    self._nmea_qualty_errors,
+    100 * self._nmea_qualty_errors/self._total_lines,
+    self._horizontal_speed_errors,
+    100 * self._horizontal_speed_errors/self._total_lines,
+    self._horizontal_acceleration_errors,
+    100 * self._horizontal_acceleration_errors/self._total_lines,
 )
 
 
@@ -340,47 +370,47 @@ Percent Unreasonable Horizontal Accelerations: %0.3f %%\n\
 
         return {
             "filename": self._filename,
-            "antennaAltitudeMax": self._antennaAltitude[1],
-            "antennaAltitudeMin": self._antennaAltitude[0],
-            "horizontalSpeedMax": self._horizontalSpeed[1],
-            "horizontalSpeedMin": self._horizontalSpeed[0],
-            "horizontalAccelerationMax": self._horizontalAcceleration[1],
-            "horizontalAccelerationMin": self._horizontalAcceleration[0],
-            "distanceFromStartPort": self._distanceFromPort[0],
-            "distanceFromEndPort": self._distanceFromPort[1],
+            "antennaAltitudeMax": self._antenna_altitude[1],
+            "antennaAltitudeMin": self._antenna_altitude[0],
+            "horizontalSpeedMax": self._horizontal_speed[1],
+            "horizontalSpeedMin": self._horizontal_speed[0],
+            "horizontalAccelerationMax": self._horizontal_acceleration[1],
+            "horizontalAccelerationMin": self._horizontal_acceleration[0],
+            "distanceFromStartPort": self._distance_from_port[0],
+            "distanceFromEndPort": self._distance_from_port[1],
             "firstEpoch": self._timestamps[0].strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             "lastEpoch": self._timestamps[1].strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             "satellitesMax": self._nsv[1],
             "satellitesMin": self._nsv[0],
             "hdopMax": self._hdop[1],
             "hdopMin": self._hdop[0],
-            "deltaTMax": str(self._deltaT[1]),
-            "deltaTErrorPercentage": round(self._deltaTErrors/self._totalLines, 2) * 100,
-            "outOfSequenceErrors": self._outOfSequenceErrors,
-            "outOfSequenceErrorPercentage": round(self._outOfSequenceErrors/self._totalLines, 2) * 100,
-            "nmeaQualtyErrors": self._nmeaQualtyErrors,
-            "nmeaQualtyErrorPercentage": round(self._nmeaQualtyErrors/self._totalLines, 2) * 100,
-            "horizontalSpeedErrors": self._horizontalSpeedErrors,
-            "horizontalSpeedErrorPercentage": round(self._horizontalSpeedErrors/self._totalLines, 2) * 100,
-            "horizontalAccelerationErrors": self._horizontalAccelerationErrors,
-            "horizontalAccelerationErrorPercentage": round(self._horizontalAccelerationErrors/self._totalLines, 2) * 100
+            "deltaTMax": str(self._delta_t[1]),
+            "deltaTErrorPercentage": round(self._delta_t_errors/self._total_lines, 2) * 100,
+            "outOfSequenceErrors": self._out_of_sequence_errors,
+            "outOfSequenceErrorPercentage": round(self._out_of_sequence_errors/self._total_lines, 2) * 100,
+            "nmeaQualtyErrors": self._nmea_qualty_errors,
+            "nmeaQualtyErrorPercentage": round(self._nmea_qualty_errors/self._total_lines, 2) * 100,
+            "horizontalSpeedErrors": self._horizontal_speed_errors,
+            "horizontalSpeedErrorPercentage": round(self._horizontal_speed_errors/self._total_lines, 2) * 100,
+            "horizontalAccelerationErrors": self._horizontal_acceleration_errors,
+            "horizontalAccelerationErrorPercentage": round(self._horizontal_acceleration_errors/self._total_lines, 2) * 100
         }
 
 
 class NavExport():
     """
     Class for build navexport products
-    """    
+    """
 
-    def __init__(self, filename, deltaTThreshold = max_deltaT, speedThreshold = max_speed, accelerationThreshold = max_accel):
+    def __init__(self, filename, delta_t_threshold = MAX_DELTA_T, speed_threshold = MAX_SPEED, acceleration_threshold = MAX_ACCEL):
 
         # The filename
         self._filename = filename
 
         # The QA thresholds
-        self._deltaTThreshold = pd.Timedelta('%d seconds' % deltaTThreshold)
-        self._horizontalSpeedThreshold = speedThreshold
-        self._horzontalAccelerationThreshold = accelerationThreshold
+        self._delta_t_threshold = pd.Timedelta("{} seconds".format(delta_t_threshold))
+        self._horizontal_speed_threshold = speed_threshold
+        self._horzontal_acceleration_threshold = acceleration_threshold
 
         self._geocsv_header = None
 
@@ -389,8 +419,11 @@ class NavExport():
 
     @property
     def data(self):
+        '''
+        Getter function for self.
+        '''
         return self._data
-    
+
 
     @staticmethod
     def _round_data(data_frame, precision=None):
@@ -417,19 +450,19 @@ class NavExport():
         self._data = read_r2rnavfile(self._filename, file_format)
 
 
-    def crop_data(self, startTS=None, endTS=None):
+    def crop_data(self, start_ts=None, end_ts=None):
         """
         Crop the NavExport dataframe to the start/end timestamps specified.
         """
 
         try:
-            if startTS is not None:
-                logging.debug("  start_dt: %s", startTS)
-                self._data = self._data[(self._data['iso_time'] >= startTS)]
+            if start_ts is not None:
+                logging.debug("  start_dt: %s", start_ts)
+                self._data = self._data[(self._data['iso_time'] >= start_ts)]
 
-            if endTS is not None:
-                logging.debug("  stop_dt: %s", endTS)
-                self._data = self._data[(self._data['iso_time'] <= endTS)]
+            if end_ts is not None:
+                logging.debug("  stop_dt: %s", end_ts)
+                self._data = self._data[(self._data['iso_time'] <= end_ts)]
 
         except Exception as err:
             logging.error("Could not crop data")
@@ -452,15 +485,15 @@ class NavExport():
 
         # remove bad sequence data points
         logging.debug("Culling out-of-sequence data")
-        self._data = self._data[self._data['valid_order'] == 1]        
-        
+        self._data = self._data[self._data['valid_order'] == 1]
+
         # remove bad speeds
         logging.debug("Culling data exceeding speed threshold")
-        self._data = self._data[self._data['speed_made_good'] <= self._horizontalSpeedThreshold]        
-        
+        self._data = self._data[self._data['speed_made_good'] <= self._horizontal_speed_threshold]
+
         # remove bad accelerations
         logging.debug("Culling data exceeding acceleration threshold")
-        self._data = self._data[self._data['acceleration'] <= self._horzontalAccelerationThreshold]        
+        self._data = self._data[self._data['acceleration'] <= self._horzontal_acceleration_threshold]
 
 
     def build_bestres(self):
@@ -469,7 +502,7 @@ class NavExport():
         """
 
         drop_columns = [x for x in list(self._data.columns) if x not in bestres_cols]
-        logging.debug("Dropping columns: %s" % drop_columns)
+        logging.debug("Dropping columns: %s", drop_columns)
         self._data = self._data.drop(drop_columns, axis = 1)
 
         logging.debug("Rounding data: %s", rounding)
@@ -485,7 +518,7 @@ class NavExport():
         """
 
         drop_columns = [x for x in list(self._data.columns) if x not in onemin_cols]
-        logging.debug("Dropping columns: %s" % drop_columns)
+        logging.debug("Dropping columns: %s", drop_columns)
         self._data = self._data.drop(drop_columns, axis = 1)
 
         logging.debug('Subsampling data...')
@@ -532,16 +565,16 @@ class NavExport():
         """
 
         drop_columns = [x for x in list(self._data.columns) if x not in control_cols]
-        logging.debug("Dropping columns: %s" % drop_columns)
+        logging.debug("Dropping columns: %s", drop_columns)
         self._data = self._data.drop(drop_columns, axis = 1)
 
         # run rdp algorithim
         logging.debug("Building control coordinates using RDP algorithim")
         coords = self._data.filter(['ship_longitude','ship_latitude'], axis=1).to_numpy()
-        control = rdp(coords, epsilon=rdp_epsilon)
+        control = rdp(coords, epsilon=RDP_EPSILON)
 
-        logging.debug("Length of full-res coordinates: %d" % len(self._data.index))
-        logging.debug("Length of control coordinates: %d" % control.shape[0])
+        logging.debug("Length of full-res coordinates: %d", len(self._data.index))
+        logging.debug("Length of control coordinates: %d", control.shape[0])
 
         control_df = pd.DataFrame(control, columns = ['ship_longitude','ship_latitude'])
 
@@ -563,17 +596,20 @@ class NavExport():
 
         geocsv_header = ""
 
-        for key, value in self._geocsv_header.items():
+        for key, _ in self._geocsv_header.items():
             if custom_meta and key in custom_meta:
-                geocsv_header += "#%s: %s\n" % (key, custom_meta[key])
+                geocsv_header += "#{}: {}\n".format(key, custom_meta[key])
 
             else:
-                geocsv_header += "#%s: %s\n" % (key, self._geocsv_header[key])
+                geocsv_header += "#{}: {}\n".format(key, self._geocsv_header[key])
 
         return geocsv_header
 
 
     def to_csv(self):
+        '''
+        Output self._data in csv format.
+        '''
         output = StringIO()
         self._data.to_csv(output, index=False, na_rep='NAN')
         output.seek(0)
@@ -596,31 +632,49 @@ class NavParser():
 
     @property
     def name(self):
+        '''
+        Getter function for self._name
+        '''
         return self._name
-    
+
 
     @property
     def description(self):
+        '''
+        Getter function for self._description
+        '''
         return self._description
-    
+
 
     @property
     def example_data(self):
+        '''
+        Getter function for self._example_data
+        '''
         return self._example_data
 
 
     @property
     def parse_cols(self):
+        '''
+        Getter function for self._parse_cols
+        '''
         return self._parse_cols
-    
+
 
     @property
     def file_report(self):
+        '''
+        Getter function for self._file_report
+        '''
         return self._file_report
-        
+
 
     @property
     def dataframe(self):
+        '''
+        Getter function for self._df_proc
+        '''
         return self._df_proc
 
 
@@ -638,14 +692,14 @@ class NavParser():
         self._file_report.append(file_report)
 
 
-    def add_dateframe(self, df):
+    def add_dateframe(self, data):
         """
-        Add the dataframe df to the NavParser's _df_proc dataframe
+        Add the dataframe data to the NavParser's _df_proc dataframe
         """
         if self._df_proc.empty:
-            self._df_proc = df
+            self._df_proc = data
         else:
-            self._df_proc = pd.concat([self._df_proc, df], ignore_index=True)
+            self._df_proc = pd.concat([self._df_proc, data], ignore_index=True)
 
 
     def proc_dataframe(self):
@@ -697,18 +751,18 @@ class NavParser():
         self._df_proc = self._df_proc.drop('speed_next', axis=1)
 
 
-    def crop_data(self, startTS=None, endTS=None):
+    def crop_data(self, start_ts=None, end_ts=None):
         """
         Crop the dataframe to the start/end timestamps specified.
         """
         try:
-            if startTS is not None:
-                logging.debug("  start_dt: %s", startTS)
-                self._df_proc = self._df_proc[(self._df_proc['iso_time'] >= startTS)]
+            if start_ts is not None:
+                logging.debug("  start_dt: %s", start_ts)
+                self._df_proc = self._df_proc[(self._df_proc['iso_time'] >= start_ts)]
 
-            if endTS is not None:
-                logging.debug("  stop_dt: %s", endTS)
-                self._df_proc = self._df_proc[(self._df_proc['iso_time'] <= endTS)]
+            if end_ts is not None:
+                logging.debug("  stop_dt: %s", end_ts)
+                self._df_proc = self._df_proc[(self._df_proc['iso_time'] <= end_ts)]
 
         except Exception as err:
             logging.error("Could not crop data")

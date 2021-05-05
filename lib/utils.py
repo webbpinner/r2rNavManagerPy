@@ -1,31 +1,26 @@
 #!/usr/bin/env python3
-# ----------------------------------------------------------------------------------- #
-#
-#         FILE:  utils.py
-#
-#  DESCRIPTION:  Contains various utility functions used by the r2rNavManagerPy
-#                programs.
-#
-#         BUGS:
-#        NOTES:
-#       AUTHOR:  Webb Pinner
-#      COMPANY:  OceanDataTools
-#      VERSION:  0.1
-#      CREATED:  2021-04-15
-#     REVISION:  
-#
-# LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
-#               Copyright (C) OceanDataTools 2021
-#
-# ----------------------------------------------------------------------------------- #
+'''
+        FILE:  utils.py
+ DESCRIPTION:  Contains various utility functions used by the r2rNavManagerPy
+               programs.
+
+        BUGS:
+       NOTES:
+      AUTHOR:  Webb Pinner
+     COMPANY:  OceanDataTools
+     VERSION:  0.2
+     CREATED:  2021-04-15
+    REVISION:  2021-05-05
+
+LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
+              Copyright (C) OceanDataTools 2021
+'''
+
 import os
-import sys
 import glob
 import math
+import logging
 import pandas as pd
-
-from os.path import dirname, realpath
-sys.path.append(dirname(dirname(realpath(__file__))))
 
 ################################################################################
 def build_file_list(path, sort=True, unique=True):
@@ -36,37 +31,36 @@ def build_file_list(path, sort=True, unique=True):
     directories the function returns a list of all the files and the files in
     the directories
 
-    By default the function will sort the filelist and only return unique
+    By default the function will sort the file_list and only return unique
     filenames
     """
 
-    fileList = []
+    file_list = []
 
     if isinstance(path, list):
         for item in path:
-            fileList += build_file_list(item)
+            file_list += build_file_list(item)
 
     elif os.path.isfile(path):
-        fileList.append(path)
+        file_list.append(path)
 
     elif os.path.isdir(path):
         for i in glob.glob(os.path.join(path, "*")):
             if os.path.isfile(i):
-                fileList.append(i)
+                file_list.append(i)
 
             elif os.path.isdir(i):
-                dirname = os.path.basename(i)               
-                fileList.append(build_file_list(i))
+                file_list.append(build_file_list(i))
 
     # eliminate duplicates
     if unique:
-        fileList = list(dict.fromkeys(fileList))
-    
+        file_list = list(dict.fromkeys(file_list))
+
     # sort list
     if sort:
-        fileList.sort()
+        file_list.sort()
 
-    return fileList
+    return file_list
 
 
 ################################################################################
@@ -88,35 +82,35 @@ def get_nav_formats():
     return valid_nav_formats
 
 
-def calculate_bearing(pointB, pointA):
+def calculate_bearing(point_b, point_a):
     """
     Calculates the bearing between two points.
     The formulae used is the following:
         θ = atan2(sin(Δlong).cos(lat2),
                   cos(lat1).sin(lat2) − sin(lat1).cos(lat2).cos(Δlong))
     :Parameters:
-      - `pointA: The tuple representing the latitude/longitude for the
+      - `point_a: The tuple representing the latitude/longitude for the
         first point. Latitude and longitude must be in decimal degrees
-      - `pointB: The tuple representing the latitude/longitude for the
+      - `point_b: The tuple representing the latitude/longitude for the
         second point. Latitude and longitude must be in decimal degrees
     :Returns:
       The bearing in degrees
     :Returns Type:
       float
     """
-    if (type(pointA) != tuple) or (type(pointB) != tuple):
+    if not isinstance(point_a, tuple) or not isinstance(point_b, tuple):
         raise TypeError("Only tuples are supported as arguments")
 
-    lat1 = math.radians(pointA[0])
-    lat2 = math.radians(pointB[0])
+    lat1 = math.radians(point_a[0])
+    lat2 = math.radians(point_b[0])
 
-    diffLong = math.radians(pointB[1] - pointA[1])
+    diff_long = math.radians(point_b[1] - point_a[1])
 
-    x = math.sin(diffLong) * math.cos(lat2)
-    y = math.cos(lat1) * math.sin(lat2) - (math.sin(lat1)
-            * math.cos(lat2) * math.cos(diffLong))
+    x_pos = math.sin(diff_long) * math.cos(lat2)
+    y_pos = math.cos(lat1) * math.sin(lat2) - (math.sin(lat1)
+            * math.cos(lat2) * math.cos(diff_long))
 
-    initial_bearing = math.atan2(x, y)
+    initial_bearing = math.atan2(x_pos, y_pos)
 
     # Now we have the initial bearing but math.atan2 return values
     # from -180° to + 180° which is not what we want for a compass bearing
@@ -127,19 +121,19 @@ def calculate_bearing(pointB, pointA):
     return compass_bearing
 
 
-def read_r2rnavfile(file, format='csv'):
+def read_r2rnavfile(file, file_format='csv'):
     """
     Read the specifed r2rnav formatted file.  Returns a dataframe if successful
     Return None if the file could not be read.
     """
 
-    if format == 'hdf':
+    if file_format == 'hdf':
         try:
             data = pd.read_hdf(file)
             return data
         except IOError:
             logging.error("Error opening file r2rnav file: %s", file)
-    elif format == "csv":
+    elif file_format == "csv":
         try:
             data = pd.read_csv(file)
             data['iso_time'] = pd.to_datetime(data['iso_time'])

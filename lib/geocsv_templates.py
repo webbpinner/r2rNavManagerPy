@@ -1,3 +1,20 @@
+#!/usr/bin/env python3
+'''
+        FILE:  geojson_templates.py
+ DESCRIPTION:  contains the geoCSV formatted header templates for the various
+               r2rNavManagerPy geoCSV products
+
+        BUGS:
+       NOTES:
+      AUTHOR:  Webb Pinner
+     COMPANY:  OceanDataTools
+     VERSION:  0.2
+     CREATED:  2021-04-17
+    REVISION:  2021-05-05
+
+LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
+              Copyright (C) OceanDataTools 2021
+'''
 
 bestres_header = {
     'dataset': 'GeoCSV 2.0',

@@ -1,30 +1,26 @@
 #!/usr/bin/env python3
-# ----------------------------------------------------------------------------------- #
-#
-#         FILE:  navinfo.py
-#
-#  DESCRIPTION:  Return information based on r2rnav formatted file to stdout unless
-#                 -l defined.
-#
-#         BUGS:
-#        NOTES:
-#       AUTHOR:  Webb Pinner
-#      COMPANY:  OceanDataTools
-#      VERSION:  0.1
-#      CREATED:  2021-04-17
-#     REVISION:  
-#
-# LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
-#               Copyright (C) OceanDataTools 2021
-#
-# ----------------------------------------------------------------------------------- #
+'''
+        FILE:  navinfo.py
+ DESCRIPTION:  Return information based on r2rnav formatted file to stdout
+               unless -l defined.
+
+        BUGS:
+       NOTES:
+      AUTHOR:  Webb Pinner
+     COMPANY:  OceanDataTools
+     VERSION:  0.2
+     CREATED:  2021-04-17
+    REVISION:  2021-05-05
+
+LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
+              Copyright (C) OceanDataTools 2021
+'''
 
 import argparse
 import os
 import sys
 import json
 import logging
-import pandas as pd
 from datetime import datetime
 
 from os.path import dirname, realpath
@@ -51,7 +47,7 @@ if __name__ == "__main__":
     ############################
     # Set up logging before we do any other argument parsing (so that we
     # can log problems with argument parsing).
-  
+
     LOGGING_FORMAT = '%(asctime)-15s %(levelname)s - %(message)s'
     logging.basicConfig(format=LOGGING_FORMAT)
 
@@ -62,11 +58,11 @@ if __name__ == "__main__":
     try:
 
         # Process the files
-        logging.info("Reading r2rnav file: %s" % parsed_args.input)
+        logging.info("Reading r2rnav file: %s", parsed_args.input)
         data = read_r2rnavfile(parsed_args.input, parsed_args.inputformat)
 
         if data is None:
-            logging.error("Unable to read input file")        
+            logging.error("Unable to read input file")
             sys.exit(0)
 
         try:
@@ -92,7 +88,7 @@ if __name__ == "__main__":
         navinfo.build_report(data)
 
         if parsed_args.logfile:
-            logging.info("Saving info report to %s in %s format" % (parsed_args.logfile, parsed_args.logfileformat))
+            logging.info("Saving info report to %s in %s format", parsed_args.logfile, parsed_args.logfileformat)
 
             try:
                 with open(parsed_args.logfile, 'w') as log_file:
@@ -116,4 +112,4 @@ if __name__ == "__main__":
         try:
             sys.exit(0)
         except SystemExit:
-            os._exit(0)
+            os._exit(0) # pylint: disable=protected-access

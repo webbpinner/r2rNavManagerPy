@@ -1,36 +1,33 @@
 #!/usr/bin/env python3
-# ----------------------------------------------------------------------------------- #
-#
-#         FILE:  navparse.py
-#
-#  DESCRIPTION:  Parse raw position data, process and export into r2rnav intermediate
-#                format.
-#
-#         BUGS:
-#        NOTES:
-#       AUTHOR:  Webb Pinner
-#      COMPANY:  OceanDataTools
-#      VERSION:  0.1
-#      CREATED:  2021-04-15
-#     REVISION:  
-#
-# LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
-#               Copyright (C) OceanDataTools 2021
-#
-# ----------------------------------------------------------------------------------- #
+'''
+        FILE:  navparse.py
+ DESCRIPTION:  Parse raw position data, process and export into r2rnav intermediate
+               format.
+
+        BUGS:
+       NOTES:
+      AUTHOR:  Webb Pinner
+     COMPANY:  OceanDataTools
+     VERSION:  0.2
+     CREATED:  2021-04-15
+    REVISION:  2021-05-05
+
+LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
+              Copyright (C) OceanDataTools 2021
+'''
 
 import argparse
 import os
 import sys
 import json
-import glob
 import logging
-import pandas as pd
 from io import StringIO
 from datetime import datetime
 
 from os.path import dirname, realpath
 sys.path.append(dirname(dirname(realpath(__file__))))
+
+import pandas as pd
 
 from lib.utils import build_file_list, is_valid_nav_format
 from lib.nav_manager import NavFileReport
@@ -40,10 +37,13 @@ from parsers.nav03_parser import Nav03Parser
 from parsers.nav33_parser import Nav33Parser
 
 def check_nav_format(nav_format):
+    '''
+    Verifies a valid nav format has been specified
+    '''
     if is_valid_nav_format(nav_format):
         return nav_format
-    else:
-        raise argparse.ArgumentTypeError("%s is an invalid nav format" % nav_format)
+
+    raise argparse.ArgumentTypeError("%s is an invalid nav format" % nav_format)
 
 # -------------------------------------------------------------------------------------
 # Main function
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     ############################
     # Set up logging before we do any other argument parsing (so that we
     # can log problems with argument parsing).
-  
+
     LOGGING_FORMAT = '%(asctime)-15s %(levelname)s - %(message)s'
     logging.basicConfig(format=LOGGING_FORMAT)
 
@@ -74,28 +74,31 @@ if __name__ == "__main__":
     logging.getLogger().setLevel(LOG_LEVELS[parsed_args.verbosity])
 
     # Set file parser
-    nav_parser = None
+    nav_parser = None # pylint: disable=invalid-name
 
-    if(parsed_args.format == 'nav01'):
+    if parsed_args.format == 'nav01':
         nav_parser = Nav01Parser()
-    elif(parsed_args.format == 'nav02'):
+
+    if parsed_args.format == 'nav02':
         nav_parser = Nav02Parser()
-    elif(parsed_args.format == 'nav03'):
+
+    if parsed_args.format == 'nav03':
         nav_parser = Nav03Parser()
-    elif(parsed_args.format == 'nav33'):
+
+    if parsed_args.format == 'nav33':
         nav_parser = Nav33Parser()
 
     # Display information about parser
-    logging.info("Parser Name: %s" % nav_parser.name)
-    logging.info("Parser Description: %s" % nav_parser.description)
-    logging.info("Parser Example Data: %s\n  " % "\n  ".join(nav_parser.example_data.split("\n")).rstrip())
+    logging.info("Parser Name: %s", nav_parser.name)
+    logging.info("Parser Description: %s", nav_parser.description)
+    logging.info("Parser Example Data: %s\n  ", "\n  ".join(nav_parser.example_data.split("\n")).rstrip())
 
     # Build filelist
     fileList = build_file_list(parsed_args.input)
 
-    logging.info('Input files:\n  %s' % '\n  '.join(fileList))
+    logging.info('Input files:\n  %s', '\n  '.join(fileList))
     if parsed_args.outfile:
-        logging.info('Outfile: %s' % parsed_args.outfile)
+        logging.info('Outfile: %s', parsed_args.outfile)
 
     # If there are no files to process then quit
     if not fileList:
@@ -105,12 +108,12 @@ if __name__ == "__main__":
     # Process the files
     try:
         for file in fileList:
-            logging.info("Parsing data file: %s" % file)
+            logging.info("Parsing data file: %s", file)
 
             results, parse_errors = nav_parser.parse_file(file)
 
             if results is None:
-                logging.warning("Problem parsing file: %s" % file)
+                logging.warning("Problem parsing file: %s", file)
                 sys.exit(0)
 
             # If no data ingested from file, quit
@@ -122,7 +125,7 @@ if __name__ == "__main__":
 
             # Set lines with parsing errors
             fileReport = NavFileReport(file)
-            fileReport.build_report(df, parse_errors)
+            fileReport.build_report(df, parse_errors=parse_errors)
 
             nav_parser.add_file_report(fileReport)
 
@@ -131,12 +134,12 @@ if __name__ == "__main__":
             nav_parser.add_dateframe(df)
 
         if parsed_args.startTS:
-            logging.info("Cropping data older than %s" % parsed_args.startTS.strftime('%Y-%m-%dT%H:%M:%S.%fZ'))
-            nav_parser.crop_dataframe(start = parsed_args.startTS)
+            logging.info("Cropping data older than %s", parsed_args.startTS.strftime('%Y-%m-%dT%H:%M:%S.%fZ'))
+            nav_parser.crop_data(start_ts = parsed_args.startTS)
 
         if parsed_args.endTS:
-            logging.info("Cropping data newer than %s" % parsed_args.endTS.strftime('%Y-%m-%dT%H:%M:%S.%fZ'))
-            nav_parser.crop_dataframe(end = parsed_args.endTS)
+            logging.info("Cropping data newer than %s", parsed_args.endTS.strftime('%Y-%m-%dT%H:%M:%S.%fZ'))
+            nav_parser.crop_data(end_ts = parsed_args.endTS)
 
         if nav_parser.dataframe.shape[0] == 0:
             logging.warning("Data is empty after cropping for start/end timestamps")
@@ -145,10 +148,10 @@ if __name__ == "__main__":
             logging.info("Processing data")
             nav_parser.proc_dataframe()
 
-        logging.info("File report(s):\n%s" % '\n'.join([str(report) for report in nav_parser.file_report]))
+        logging.info("File report(s):\n%s", '\n'.join([str(report) for report in nav_parser.file_report]))
 
         if parsed_args.logfile:
-            logging.info("Saving file report to %s in %s format" % (parsed_args.logfile, parsed_args.logfileformat))
+            logging.info("Saving file report to %s in %s format", parsed_args.logfile, parsed_args.logfileformat)
 
             try:
                 with open(parsed_args.logfile, 'w') as report_file:
@@ -164,10 +167,10 @@ if __name__ == "__main__":
                 logging.error("Error saving file report file: %s", parsed_args.logfile)
 
         if parsed_args.outfile:
-            logging.info("Saving data to %s in %s format" % (parsed_args.outfile, parsed_args.outfileformat))
+            logging.info("Saving data to %s in %s format", parsed_args.outfile, parsed_args.outfileformat)
 
             if parsed_args.outfileformat == 'csv':
-    
+
                 try:
                     with open(parsed_args.outfile, 'w') as data_file:
                         nav_parser.dataframe.to_csv(data_file, index=False, date_format='%Y-%m-%dT%H:%M:%S.%fZ')
@@ -202,4 +205,4 @@ if __name__ == "__main__":
         try:
             sys.exit(0)
         except SystemExit:
-            os._exit(0)
+            os._exit(0) # pylint: disable=protected-access

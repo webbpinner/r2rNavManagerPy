@@ -1,43 +1,41 @@
 #!/usr/bin/env python3
-# ----------------------------------------------------------------------------------- #
-#
-#         FILE:  nav01_parser.py
-#
-#  DESCRIPTION:  Nav01 parser class for raw output from a Furuno GP-90D GPS reciever
-#                Data file contains GGA/ZDA/VTG NMEA0183 sentences with no additional
-#                information added.
-#
-#         BUGS:
-#        NOTES:
-#       AUTHOR:  Webb Pinner
-#      COMPANY:  OceanDataTools
-#      VERSION:  0.1
-#      CREATED:  2021-04-24
-#     REVISION:  
-#
-# LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
-#               Copyright (C) OceanDataTools 2021
-#
-# ----------------------------------------------------------------------------------- #
-import os
+'''
+        FILE:  nav01_parser.py
+ DESCRIPTION:  Nav01 parser class for raw output from a Furuno GP-90D GPS reciever
+               Data file contains GGA/ZDA/VTG NMEA0183 sentences with no additional
+               information added.
+
+        BUGS:
+       NOTES:
+      AUTHOR:  Webb Pinner
+     COMPANY:  OceanDataTools
+     VERSION:  0.2
+     CREATED:  2021-04-24
+    REVISION:  2021-05-05
+
+LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
+              Copyright (C) OceanDataTools 2021
+'''
+
 import re
 import csv
 import sys
 import logging
-import pandas as pd
 from datetime import datetime, timedelta
-from geopy import Point
-from geopy.distance import distance, great_circle
 
 from os.path import dirname, realpath
 sys.path.append(dirname(dirname(realpath(__file__))))
 
+import pandas as pd
+from geopy import Point
+from geopy.distance import distance
+
 from lib.nav_manager import NavParser
 from lib.utils import calculate_bearing
 
-description = "Nav parser for raw output from a Furuno GP-90D GPS reciever. Data file contains GGA/ZDA/VTG NMEA0183 sentences with no additional information added."
+DESCRIPTION = "Nav parser for raw output from a Furuno GP-90D GPS reciever. Data file contains GGA/ZDA/VTG NMEA0183 sentences with no additional information added."
 
-example_data = """
+EXAMPLE_DATA = """
 $GPGGA,123034,2447.9660,N,12221.8670,E,2,9,0.3,38,M,,M,,*40
 $GPVTG,147.2,T,150.9,M,7.6,N,14.1,K*76
 $GPZDA,123034,23,08,2009,00,00*4D
@@ -50,12 +48,17 @@ raw_gga_cols = ['hdr','sensor_time','latitude','NS','longitude','EW','nmea_quali
 raw_vtg_cols = ['hdr','heading_true','True','heading_mag','Mag','speed_kts','Knots','speed_kph','Kph_checksum']
 raw_zda_cols = ['hdr','sensor_time','day','month','year','tz_hr','tz_min_checksum']
 
-sensor_timestamp_format = "%H%M%S"
+SENSOR_TIMESTAMP_FORMAT = "%H%M%S"
 
 class Nav01Parser(NavParser):
+    '''
+    Parser class for raw output from a Furuno GP-90D GPS reciever Data file
+    contains GGA/ZDA/VTG NMEA0183 sentences with no additional information
+    added.
+    '''
 
     def __init__(self):
-        super().__init__(name="nav01", description=description, example_data=example_data)
+        super().__init__(name="nav01", description=DESCRIPTION, example_data=EXAMPLE_DATA)
 
 
     @staticmethod
@@ -73,10 +76,10 @@ class Nav01Parser(NavParser):
 
         csum = 0
 
-        for c in chksumdata:
-           # XOR'ing value of csum against the next char in line
-           # and storing the new XOR value in csum
-           csum ^= ord(c)
+        for char in chksumdata:
+            # XOR'ing value of csum against the next char in line
+            # and storing the new XOR value in csum
+            csum ^= ord(char)
 
         return 1 if hex(csum) == hex(int(cksum, 16)) else 0
 
@@ -96,57 +99,57 @@ class Nav01Parser(NavParser):
         try:
             with open(filepath, 'r') as csvfile:
 
-                csvReader = csv.reader(csvfile)
+                csv_reader = csv.reader(csvfile)
 
-                for row in csvReader:
+                for row in csv_reader:
 
                     if row[0] == '$GPZDA':
 
                         if len(row) != len(raw_zda_cols):
-                            logging.warning("Parsing Error: (line: %s) %s" % (csvReader.line_num, ','.join(row)))
-                            parse_error_lines.append(csvReader.line_num)
+                            logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
+                            parse_error_lines.append(csv_reader.line_num)
                             continue
 
                         try:
                             date = datetime.strptime(row[4] + row[3] + row[2], "%Y%m%d")
                         except Exception as err:
-                            logging.warning("Parsing Error: (line: %s) %s" % (csvReader.line_num, ','.join(row)))
+                            logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
                             logging.debug(str(err))
-                            parse_error_lines.append(csvReader.line_num)
+                            parse_error_lines.append(csv_reader.line_num)
                             continue
 
-                        zda_into_df['lineno'].append(csvReader.line_num)
+                        zda_into_df['lineno'].append(csv_reader.line_num)
                         zda_into_df['date'].append(date)
 
                     elif row[0] == '$GPVTG':
 
                         if len(row) != len(raw_vtg_cols):
-                            logging.warning("Parsing Error: (line: %s) %s" % (csvReader.line_num, ','.join(row)))
-                            parse_error_lines.append(csvReader.line_num)
+                            logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
+                            parse_error_lines.append(csv_reader.line_num)
                             continue
 
                         try:
                             speed_made_good = float(row[7])*1000/3600
                             course_made_good = float(row[1])
                         except Exception as err:
-                            logging.warning("Parsing Error: (line: %s) %s" % (csvReader.line_num, ','.join(row)))
+                            logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
                             logging.debug(str(err))
-                            parse_error_lines.append(csvReader.line_num)
+                            parse_error_lines.append(csv_reader.line_num)
                             continue
 
-                        vtg_into_df['lineno'].append(csvReader.line_num)
+                        vtg_into_df['lineno'].append(csv_reader.line_num)
                         vtg_into_df['speed_made_good'].append(speed_made_good)
                         vtg_into_df['course_made_good'].append(course_made_good)
 
                     elif row[0] == '$GPGGA':
 
                         if len(row) != len(raw_gga_cols):
-                            logging.warning("Parsing Error: (line: %s) %s" % (csvReader.line_num, ','.join(row)))
-                            parse_error_lines.append(csvReader.line_num)
+                            logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
+                            parse_error_lines.append(csv_reader.line_num)
                             continue
 
                         try:
-                            sensor_time = datetime.strptime(row[1], sensor_timestamp_format)
+                            sensor_time = datetime.strptime(row[1], SENSOR_TIMESTAMP_FORMAT)
                             ship_latitude = self._hemisphere_correction(float(row[2][:2]) + float(row[2][2:])/60, row[3])
                             ship_longitude = self._hemisphere_correction(float(row[4][:3]) + float(row[4][3:])/60, row[5])
                             nmea_quality = int(row[6])
@@ -156,12 +159,12 @@ class Nav01Parser(NavParser):
                             valid_cksum = self._verify_checksum(','.join(row))
 
                         except Exception as err:
-                            logging.warning("Parsing Error: (line: %s) %s" % (csvReader.line_num, ','.join(row)))
+                            logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
                             logging.debug(str(err))
-                            parse_error_lines.append(csvReader.line_num)
+                            parse_error_lines.append(csv_reader.line_num)
                             continue
 
-                        gga_into_df['lineno'].append(csvReader.line_num)
+                        gga_into_df['lineno'].append(csv_reader.line_num)
                         gga_into_df['sensor_time'].append(sensor_time)
                         gga_into_df['ship_latitude'].append(ship_latitude)
                         gga_into_df['ship_longitude'].append(ship_longitude)

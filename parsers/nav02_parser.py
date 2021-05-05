@@ -1,24 +1,21 @@
 #!/usr/bin/env python3
-# ----------------------------------------------------------------------------------- #
-#
-#         FILE:  nav02_parser.py
-#
-#  DESCRIPTION:  Nav02 parser class for GGA data prefixed with the SCS formatted
-#                timestamp (mm/dd/YYYY,HH:MM:SS.sss) and comma (,)
-#
-#         BUGS:
-#        NOTES:
-#       AUTHOR:  Webb Pinner
-#      COMPANY:  OceanDataTools
-#      VERSION:  0.1
-#      CREATED:  2021-04-15
-#     REVISION:  
-#
-# LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
-#               Copyright (C) OceanDataTools 2021
-#
-# ----------------------------------------------------------------------------------- #
-import os
+'''
+        FILE:  nav02_parser.py
+ DESCRIPTION:  Nav02 parser class for GGA data prefixed with the SCS formatted
+               timestamp (mm/dd/YYYY,HH:MM:SS.sss) and comma (,)
+
+        BUGS:
+       NOTES:
+      AUTHOR:  Webb Pinner
+     COMPANY:  OceanDataTools
+     VERSION:  0.2
+     CREATED:  2021-04-15
+    REVISION:  2021-05-05
+
+LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
+              Copyright (C) OceanDataTools 2021
+'''
+
 import re
 import csv
 import sys
@@ -30,9 +27,9 @@ sys.path.append(dirname(dirname(realpath(__file__))))
 
 from lib.nav_manager import NavParser
 
-description = "Nav parser for GGA data prefixed with the SCS formatted timestamp (mm/dd/YYYY,HH:MM:SS.sss) and comma (,)"
+DESCRIPTION = "Nav parser for GGA data prefixed with the SCS formatted timestamp (mm/dd/YYYY,HH:MM:SS.sss) and comma (,)"
 
-example_data = """
+EXAMPLE_DATA = """
 03/19/2019,13:13:02.354,$GNGGA,131302.00,2443.628838,N,11858.560367,W,2,15,0.8,-25.400,M,0.000,M,6.0,0436*60
 03/19/2019,13:13:02.854,$GNGGA,131302.50,2443.629467,N,11858.561860,W,2,15,0.8,-25.495,M,0.000,M,4.0,0436*61
 03/19/2019,13:13:03.368,$GNGGA,131303.00,2443.630108,N,11858.563351,W,2,15,0.8,-25.594,M,0.000,M,4.0,0436*6A
@@ -40,17 +37,19 @@ example_data = """
 
 raw_cols = ['date','time','hdr','sensor_time','latitude','NS','longitude','EW','nmea_quality','nsv','hdop','antenna_height','antenna_height_m','height_wgs84','height_wgs84_m','last_update','dgps_station_checksum'] # SCS style
 
-timestamp_format = "%m/%d/%Y %H:%M:%S.%f"
+TIMESTAMP_FORMAT = "%m/%d/%Y %H:%M:%S.%f"
 
-sensor_timestamp_format = "%H%M%S.%f"
+SENSOR_TIMESTAMP_FORMAT = "%H%M%S.%f"
 
 class Nav02Parser(NavParser):
+    '''
+    Parser class for GGA data prefixed with the SCS formatted timestamp
+    (mm/dd/YYYY,HH:MM:SS.sss) and comma (,)
+    '''
 
     def __init__(self):
-        super().__init__(name="nav02", description=description, example_data=example_data)
+        super().__init__(name="nav02", description=DESCRIPTION, example_data=EXAMPLE_DATA)
         self._raw_cols = raw_cols
-        self._timestamp_format = timestamp_format
-
 
     @staticmethod
     def _hemisphere_correction(coordinate, hemisphere):
@@ -68,10 +67,10 @@ class Nav02Parser(NavParser):
 
         csum = 0
 
-        for c in chksumdata:
-           # XOR'ing value of csum against the next char in line
-           # and storing the new XOR value in csum
-           csum ^= ord(c)
+        for char in chksumdata:
+            # XOR'ing value of csum against the next char in line
+            # and storing the new XOR value in csum
+            csum ^= ord(char)
 
         return 1 if hex(csum) == hex(int(cksum, 16)) else 0
 
@@ -95,8 +94,8 @@ class Nav02Parser(NavParser):
 
                     try:
 
-                        timestamp = datetime.strptime("%s %s" % (line['date'], line['time']), self._timestamp_format)
-                        sensor_timestamp = datetime.strptime(line['sensor_time'], sensor_timestamp_format)
+                        timestamp = datetime.strptime(line['date'] + ' ' + line['time'], TIMESTAMP_FORMAT)
+                        sensor_timestamp = datetime.strptime(line['sensor_time'], SENSOR_TIMESTAMP_FORMAT)
                         latitude = (self._hemisphere_correction(float(line['latitude'][:2]) + float(line['latitude'][2:])/60, line['NS']))
                         longitude = (self._hemisphere_correction(float(line['longitude'][:3]) + float(line['longitude'][3:])/60, line['EW']))
                         nmea_quality = int(line['nmea_quality'])
@@ -106,7 +105,7 @@ class Nav02Parser(NavParser):
                         valid_cksum = self._verify_checksum(line)
 
                     except Exception as err:
-                        logging.warning("Parsing Error: (line: %s) %s" % (lineno, ','.join(line)))
+                        logging.warning("Parsing Error: (line: %s) %s", lineno, ','.join(line))
                         logging.debug(str(err))
                         parse_error_lines.append(lineno)
 
