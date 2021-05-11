@@ -30,7 +30,7 @@ import pandas as pd
 from geopy import Point
 from geopy.distance import distance
 
-from lib.nav_manager import NavParser
+from lib.nav_manager import NavParser, R2RNAV_COLS
 from lib.utils import calculate_bearing
 
 DESCRIPTION = "Nav parser for raw output from a Furuno GP-90D GPS reciever. Data file contains GGA/ZDA/VTG NMEA0183 sentences with no additional information added."
@@ -89,12 +89,9 @@ class Nav01Parser(NavParser):
         Process the provided file
         """
 
-        # Line with parsing errors
-        parse_error_lines = []
-
         zda_into_df = { 'lineno': [], 'date': [] }
         vtg_into_df = { 'lineno': [], 'speed_made_good': [], 'course_made_good': [] }
-        gga_into_df = { 'lineno': [], 'sensor_time': [], 'ship_latitude': [], 'ship_longitude': [], 'nmea_quality': [], 'nsv': [], 'hdop': [], 'antenna_height': [], 'valid_cksum': [] }
+        gga_into_df = { 'lineno': [], 'sensor_time': [], 'ship_latitude': [], 'ship_longitude': [], 'nmea_quality': [], 'nsv': [], 'hdop': [], 'antenna_height': [], 'valid_cksum': [], 'valid_parse': [] }
 
         try:
             with open(filepath, 'r') as csvfile:
@@ -105,37 +102,36 @@ class Nav01Parser(NavParser):
 
                     if row[0] == '$GPZDA':
 
+                        date = None
+
                         if len(row) != len(raw_zda_cols):
                             logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
-                            parse_error_lines.append(csv_reader.line_num)
-                            continue
 
-                        try:
-                            date = datetime.strptime(row[4] + row[3] + row[2], "%Y%m%d")
-                        except Exception as err:
-                            logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
-                            logging.debug(str(err))
-                            parse_error_lines.append(csv_reader.line_num)
-                            continue
+                        else:
+                            try:
+                                date = datetime.strptime(row[4] + row[3] + row[2], "%Y%m%d")
+                            except Exception as err:
+                                logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
+                                logging.debug(str(err))
 
                         zda_into_df['lineno'].append(csv_reader.line_num)
                         zda_into_df['date'].append(date)
 
                     elif row[0] == '$GPVTG':
 
+                        speed_made_good = None
+                        course_made_good = None
+
                         if len(row) != len(raw_vtg_cols):
                             logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
-                            parse_error_lines.append(csv_reader.line_num)
-                            continue
 
-                        try:
-                            speed_made_good = float(row[7])*1000/3600
-                            course_made_good = float(row[1])
-                        except Exception as err:
-                            logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
-                            logging.debug(str(err))
-                            parse_error_lines.append(csv_reader.line_num)
-                            continue
+                        else:
+                            try:
+                                speed_made_good = float(row[7])*1000/3600
+                                course_made_good = float(row[1])
+                            except Exception as err:
+                                logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
+                                logging.debug(str(err))
 
                         vtg_into_df['lineno'].append(csv_reader.line_num)
                         vtg_into_df['speed_made_good'].append(speed_made_good)
@@ -143,26 +139,34 @@ class Nav01Parser(NavParser):
 
                     elif row[0] == '$GPGGA':
 
+                        sensor_time = None
+                        ship_latitude = None
+                        ship_longitude = None
+                        nmea_quality = None
+                        nsv = None
+                        hdop = None
+                        antenna_height = None
+                        valid_cksum = None
+                        valid_parse = 0
+
                         if len(row) != len(raw_gga_cols):
-                            logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
-                            parse_error_lines.append(csv_reader.line_num)
-                            continue
+                            logging.warning("Parsing Error 1: (line: %s) %s", csv_reader.line_num, ','.join(row))
+                            
+                        else:
+                            try:
+                                sensor_time = datetime.strptime(row[1], SENSOR_TIMESTAMP_FORMAT)
+                                ship_latitude = self._hemisphere_correction(float(row[2][:2]) + float(row[2][2:])/60, row[3])
+                                ship_longitude = self._hemisphere_correction(float(row[4][:3]) + float(row[4][3:])/60, row[5])
+                                nmea_quality = int(row[6])
+                                nsv = int(row[7])
+                                hdop = float(row[8])
+                                antenna_height = float(row[9])
+                                valid_cksum = self._verify_checksum(','.join(row))
+                                valid_parse = 1
 
-                        try:
-                            sensor_time = datetime.strptime(row[1], SENSOR_TIMESTAMP_FORMAT)
-                            ship_latitude = self._hemisphere_correction(float(row[2][:2]) + float(row[2][2:])/60, row[3])
-                            ship_longitude = self._hemisphere_correction(float(row[4][:3]) + float(row[4][3:])/60, row[5])
-                            nmea_quality = int(row[6])
-                            nsv = int(row[7])
-                            hdop = float(row[8])
-                            antenna_height = float(row[9])
-                            valid_cksum = self._verify_checksum(','.join(row))
-
-                        except Exception as err:
-                            logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
-                            logging.debug(str(err))
-                            parse_error_lines.append(csv_reader.line_num)
-                            continue
+                            except Exception as err:
+                                logging.warning("Parsing Error 2: (line: %s) %s", csv_reader.line_num, ','.join(row))
+                                logging.debug(str(err))
 
                         gga_into_df['lineno'].append(csv_reader.line_num)
                         gga_into_df['sensor_time'].append(sensor_time)
@@ -173,6 +177,7 @@ class Nav01Parser(NavParser):
                         gga_into_df['hdop'].append(hdop)
                         gga_into_df['antenna_height'].append(antenna_height)
                         gga_into_df['valid_cksum'].append(valid_cksum)
+                        gga_into_df['valid_parse'].append(valid_parse)
 
         except Exception as err:
             logging.error("Problem accessing input file: %s", filepath)
@@ -196,7 +201,7 @@ class Nav01Parser(NavParser):
         data = pd.merge_asof(data, zda_df, on="lineno")
 
         # Drop rows where date could not be determined
-        data = data[data['date'].notna()]
+        data = data.loc[~(data['date'].isna() & data['valid_parse'] == 1),:]
 
         # Use date and sensor_time to calculate iso_time
         data['iso_time'] = data['date'] + (data['sensor_time'] - datetime(1900, 1, 1))
@@ -205,11 +210,11 @@ class Nav01Parser(NavParser):
         data = data.drop(['lineno', 'date'], axis=1)
 
         # Re-order columns
-        data = data[['iso_time', 'sensor_time', 'ship_latitude', 'ship_longitude', 'nmea_quality', 'nsv', 'hdop', 'antenna_height', 'valid_cksum', 'speed_made_good', 'course_made_good' ]]
+        data = data[['iso_time', 'sensor_time', 'ship_latitude', 'ship_longitude', 'nmea_quality', 'nsv', 'hdop', 'antenna_height', 'valid_cksum', 'valid_parse', 'speed_made_good', 'course_made_good' ]]
 
         logging.debug("Finished parsing data file")
 
-        return data, parse_error_lines
+        return data
 
     def proc_dataframe(self):
         """
@@ -237,10 +242,10 @@ class Nav01Parser(NavParser):
         logging.debug("Building distance column...")
         self._df_proc['distance'] = self._df_proc.apply(lambda row: row['speed_made_good'] / 1000 * row['sensor_deltaT'].total_seconds() if row['speed_made_good'] is not None and row['sensor_deltaT'] is not None else float('nan'), axis=1)
 
-        self._df_proc['point'] = self._df_proc.apply(lambda row: Point(latitude=row['ship_latitude'], longitude=row['ship_longitude']), axis=1)
+        self._df_proc['point'] = self._df_proc.apply(lambda row: Point(latitude=row['ship_latitude'], longitude=row['ship_longitude']) if not pd.isnull(row['ship_latitude']) and not pd.isnull(row['ship_longitude']) else None, axis=1)
         self._df_proc['point_next'] = self._df_proc['point'].shift(1)
         self._df_proc.loc[self._df_proc['point_next'].isna(), 'point_next'] = None
-        self._df_proc['distance'] = self._df_proc.apply(lambda row: distance(row['point'], row['point_next']).km if pd.isnull(row['distance']) and not pd.isnull(row['point_next']) else row['distance'], axis=1)
+        self._df_proc['distance'] = self._df_proc.apply(lambda row: distance(row['point'], row['point_next']).km if pd.isnull(row['distance']) and not pd.isnull(row['point']) and not pd.isnull(row['point_next']) else row['distance'], axis=1)
 
         # Calculate speed_made_good column
         logging.debug("Calculating missing values from speed_made_good column...")
@@ -261,4 +266,4 @@ class Nav01Parser(NavParser):
         self._df_proc = self._df_proc.drop('speed_next', axis=1)
 
         # Reorder the dataframe columns to match the r2rnav format spec.
-        self._df_proc = self._df_proc[['iso_time','ship_longitude','ship_latitude','nmea_quality','nsv','hdop','antenna_height','valid_cksum','sensor_time','deltaT','sensor_deltaT','valid_order','distance','speed_made_good','course_made_good','acceleration']]
+        self._df_proc = self._df_proc[R2RNAV_COLS]

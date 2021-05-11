@@ -7,9 +7,9 @@
        NOTES:
       AUTHOR:  Webb Pinner
      COMPANY:  OceanDataTools
-     VERSION:  0.2
+     VERSION:  0.3
      CREATED:  2021-04-15
-    REVISION:  2021-05-05
+    REVISION:  2021-05-11
 
 LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for details)
               Copyright (C) OceanDataTools 2021
@@ -32,7 +32,9 @@ from geopy.distance import great_circle
 from lib.utils import calculate_bearing, read_r2rnavfile
 from lib.geocsv_templates import bestres_header, onemin_header, control_header
 
-parse_cols = ['iso_time','ship_longitude','ship_latitude','nmea_quality','nsv','hdop','antenna_height','valid_cksum','sensor_time']
+R2RNAV_COLS = ['iso_time','ship_longitude','ship_latitude','nmea_quality','nsv','hdop','antenna_height','valid_cksum','valid_parse','sensor_time','deltaT','sensor_deltaT','valid_order','distance','speed_made_good','course_made_good','acceleration']
+
+parse_cols = ['iso_time','ship_longitude','ship_latitude','nmea_quality','nsv','hdop','antenna_height','valid_cksum','valid_parse','sensor_time']
 
 bestres_cols = ['iso_time','ship_longitude','ship_latitude','nmea_quality','nsv','hdop','antenna_height','speed_made_good','course_made_good']
 onemin_cols = ['iso_time','ship_longitude','ship_latitude','speed_made_good','course_made_good']
@@ -85,6 +87,7 @@ class NavInfoReport():
         self._start_coord = [None, None]
         self._end_coord = [None, None]
         self._bbox = [ None, None, None, None]
+        self._parse_errors = None
         self._total_lines = None
 
 
@@ -137,6 +140,14 @@ class NavInfoReport():
 
 
     @property
+    def parse_errors(self):
+        '''
+        Getter function for self._parse_errors
+        '''
+        return self._parse_errors
+
+
+    @property
     def total_lines(self):
         '''
         Getter function for self._total_lines
@@ -149,13 +160,19 @@ class NavInfoReport():
         Build the NavInfo report
         """
 
-        self._start_ts = dataframe['iso_time'].iloc[0]
-        self._end_ts = dataframe['iso_time'].iloc[-1]
-        self._start_coord = [dataframe['ship_longitude'].iloc[0],dataframe['ship_latitude'].iloc[0]]
-        self._end_coord = [dataframe['ship_longitude'].iloc[-1],dataframe['ship_latitude'].iloc[-1]]
-        self._bbox = [dataframe['ship_longitude'].max(),dataframe['ship_latitude'].max(),dataframe['ship_longitude'].min(),dataframe['ship_latitude'].min()]
+        self._parse_errors = len(dataframe[(dataframe['valid_parse'] == 0)])
         self._total_lines = len(dataframe.index)
 
+        first_valid_row = dataframe[dataframe['valid_parse'] == 1].iloc[0]
+        
+        idx = dataframe.query('valid_parse.eq(1)').index.max()
+        last_valid_row = dataframe.iloc[idx]
+
+        self._start_ts = first_valid_row['iso_time']
+        self._end_ts = last_valid_row['iso_time']
+        self._start_coord = [first_valid_row['ship_longitude'],first_valid_row['ship_latitude']]
+        self._end_coord = [last_valid_row['ship_longitude'],last_valid_row['ship_latitude']]
+        self._bbox = [dataframe['ship_longitude'].max(),dataframe['ship_latitude'].max(),dataframe['ship_longitude'].min(),dataframe['ship_latitude'].min()]
 
     def __str__(self):
         return "NavInfo Report: %s\n\
@@ -169,72 +186,16 @@ Navigation Bounding Box Info:\n\
 \tMaximum Longitude: %f\n\
 \tMinimum Latitude: %f\n\
 \tMaximum Latitude: %f\n\
+Parsing Errors: %d\n\
 Total Lines of Data: %s\
-" % (basename(self._filename), self._start_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._end_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._start_coord[1], self._start_coord[0], self._end_coord[1], self._end_coord[0], self._bbox[2], self._bbox[0], self._bbox[3], self._bbox[1], self._total_lines)
+" % (basename(self._filename), self._start_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._end_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._start_coord[1], self._start_coord[0], self._end_coord[1], self._end_coord[0], self._bbox[2], self._bbox[0], self._bbox[3], self._bbox[1], self._parse_errors, self._total_lines)
 
 
     def to_json(self):
         """
         Return test data as json object
         """
-        return {"filename": self._filename, "startTS": self._start_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "endTS": self._end_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "startCoord": self._start_coord, "endCoord": self._end_coord, "bbox": self._bbox, "totalLines": self._total_lines}
-
-
-
-class NavFileReport(NavInfoReport):
-    """
-    Class for building nav file reports
-    """
-
-    def __init__(self, filename):
-        super().__init__(filename=filename)
-        self._parse_errors = []
-
-
-    @property
-    def parse_errors(self):
-        '''
-        Getter function for self._parse_errors
-        '''
-        return self._parse_errors
-
-
-    def build_report(self, dataframe, **kwargs):
-        """
-        Build the NavFile report
-        """
-
-        try:
-            parse_errors = kwargs.pop('parse_errors')
-        except KeyError:
-            parse_errors = []
-
-        self._total_lines = len(dataframe.index) + len(parse_errors)
-        super().build_report(dataframe)
-
-
-    def __str__(self):
-        return "File Report: %s\n\
-Navigation Start/End Info:\n\
-\tStart Date: %s\n\
-\tEnd Date: %s\n\
-\tStart Lat/Lon: [%f,%f]\n\
-\tEnd Lat/Lon: [%f,%f]\n\
-Navigation Bounding Box Info:\n\
-\tMinimum Longitude: %f\n\
-\tMaximum Longitude: %f\n\
-\tMinimum Latitude: %f\n\
-\tMaximum Latitude: %f\n\
-Parsing Errors: %d\n\
-Total Lines of Data: %d\
-" % (self._filename, self._start_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._end_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), self._start_coord[1], self._start_coord[0], self._end_coord[1], self._end_coord[0], self._bbox[2], self._bbox[0], self._bbox[3], self._bbox[1], len(self._parse_errors), self._total_lines)
-
-
-    def to_json(self):
-        """
-        Return test data as a json object
-        """
-        return {"filename": self._filename, "startTS": self._start_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "endTS": self._end_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "startCoord": self._start_coord, "endCoord": self._end_coord, "bbox": self._bbox, "parse_errors": self._parse_errors, "totalLines": self._total_lines}
+        return {"filename": self._filename, "startTS": self._start_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "endTS": self._end_ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "startCoord": self._start_coord, "endCoord": self._end_coord, "bbox": self._bbox, "parseErrors": self._parse_errors, "totalLines": self._total_lines}
 
 
 class NavQAReport(): # pylint: disable=too-many-instance-attributes
@@ -272,6 +233,7 @@ class NavQAReport(): # pylint: disable=too-many-instance-attributes
         self._nmea_qualty_errors = None
         self._horizontal_speed_errors = None
         self._horizontal_acceleration_errors = None
+        self._parse_errors = None
         self._cksum_errors = None
 
 
@@ -296,6 +258,7 @@ class NavQAReport(): # pylint: disable=too-many-instance-attributes
         self._nmea_qualty_errors = self._total_lines - len(dataframe[dataframe['nmea_quality'].between(1,3)])
         self._horizontal_speed_errors = len(dataframe[(dataframe['speed_made_good'] > self._horizontal_speed_threshold)])
         self._horizontal_acceleration_errors = len(dataframe[(dataframe['acceleration'] > self._horzontal_acceleration_threshold)])
+        self._parse_errors = len(dataframe[(dataframe['valid_parse'] == 0)])
         self._cksum_errors = len(dataframe[(dataframe['valid_cksum'] == 0)])
 
 
@@ -448,6 +411,10 @@ class NavExport():
         """
 
         self._data = read_r2rnavfile(self._filename, file_format)
+
+        # remove bad parse rows
+        logging.debug("Culling bad parses")
+        self._data = self._data[self._data['valid_parse'] == 1]
 
 
     def crop_data(self, start_ts=None, end_ts=None):
@@ -726,11 +693,11 @@ class NavParser():
 
         # Calculate distance column
         logging.debug("Building distance column...")
-        self._df_proc['point'] = self._df_proc.apply(lambda row: Point(latitude=row['ship_latitude'], longitude=row['ship_longitude']), axis=1)
+        self._df_proc['point'] = self._df_proc.apply(lambda row: Point(latitude=row['ship_latitude'], longitude=row['ship_longitude']) if row['valid_parse'] == 1 else None, axis=1)
         self._df_proc['point_next'] = self._df_proc['point'].shift(1)
         self._df_proc.loc[self._df_proc['point_next'].isna(), 'point_next'] = None
 
-        self._df_proc['distance'] = self._df_proc.apply(lambda row: great_circle(row['point'], row['point_next']).km if row['point_next'] is not None else float('nan'), axis=1)
+        self._df_proc['distance'] = self._df_proc.apply(lambda row: great_circle(row['point'], row['point_next']).km if not pd.isnull(row['point']) and not pd.isnull(row['point_next']) else float('nan'), axis=1)
 
         # Calculate speed_made_good column
         logging.debug("Building speed_made_good column...")
@@ -738,7 +705,7 @@ class NavParser():
 
         # Calculate course_made_good column
         logging.debug("Building course_made_good column...")
-        self._df_proc['course_made_good'] = self._df_proc.apply(lambda row: calculate_bearing(tuple(row['point']), tuple(row['point_next'])) if row['point_next'] is not None else float('nan'), axis=1)
+        self._df_proc['course_made_good'] = self._df_proc.apply(lambda row: calculate_bearing(tuple(row['point']), tuple(row['point_next'])) if not pd.isnull(row['point']) and not pd.isnull(row['point_next']) else float('nan'), axis=1)
 
         self._df_proc = self._df_proc.drop('point_next', axis=1)
         self._df_proc = self._df_proc.drop('point', axis=1)

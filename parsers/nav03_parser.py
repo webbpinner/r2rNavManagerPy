@@ -72,10 +72,7 @@ class Nav03Parser(NavParser):
         Process the provided file
         """
 
-        # Line with parsing errors
-        parse_error_lines = []
-
-        pos_into_df = { 'iso_time': [], 'sensor_time': [], 'ship_latitude': [], 'ship_longitude': [], 'nmea_quality': [], 'nsv': [], 'hdop': [], 'antenna_height': [], 'valid_cksum': [] }
+        pos_into_df = { 'iso_time': [], 'sensor_time': [], 'ship_latitude': [], 'ship_longitude': [], 'nmea_quality': [], 'nsv': [], 'hdop': [], 'antenna_height': [], 'valid_cksum': [], 'valid_parse': [] }
 
         try:
             with open(filepath, 'r') as csvfile:
@@ -84,54 +81,34 @@ class Nav03Parser(NavParser):
 
                 for row in csv_reader:
 
+                    iso_time = None
+                    sensor_time = None
+                    ship_latitude = None
+                    ship_longitude = None
+                    nmea_quality = None
+                    nsv = None
+                    hdop = None
+                    antenna_height = None
+                    valid_cksum = None
+                    valid_parse = 0
+
                     if row[2] == '$GPGLL':
 
                         if len(row) != len(raw_gll_cols):
                             logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
-                            parse_error_lines.append(csv_reader.line_num)
-                            continue
+                            valid_parse = 0
 
                         try:
                             timestamp = datetime.strptime(row[0] + ' ' + row[1], TIMESTAMP_FORMAT)
                             ship_latitude = self._hemisphere_correction(float(row[3][:2]) + float(row[3][2:])/60, row[4])
                             ship_longitude = self._hemisphere_correction(float(row[5][:3]) + float(row[5][3:])/60, row[6])
-                        except Exception as err:
-                            logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
-                            logging.debug(str(err))
-                            parse_error_lines.append(csv_reader.line_num)
-                            continue
-
-                        pos_into_df['iso_time'].append(timestamp)
-                        pos_into_df['sensor_time'].append(timestamp)
-                        pos_into_df['ship_latitude'].append(ship_latitude)
-                        pos_into_df['ship_longitude'].append(ship_longitude)
-                        pos_into_df['nmea_quality'].append(1)
-                        pos_into_df['nsv'].append(None)
-                        pos_into_df['hdop'].append(None)
-                        pos_into_df['antenna_height'].append(None)
-                        pos_into_df['valid_cksum'].append(1)
-
-                    elif row[2] == '$GPGGA':
-
-                        if len(row) != len(raw_gga_cols):
-                            logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
-                            parse_error_lines.append(csv_reader.line_num)
-                            continue
-
-                        try:
-                            timestamp = datetime.strptime("%s %s" % (row[0], row[1]), TIMESTAMP_FORMAT)
-                            ship_latitude = self._hemisphere_correction(float(row[4][:2]) + float(row[4][2:])/60, row[5])
-                            ship_longitude = self._hemisphere_correction(float(row[6][:3]) + float(row[6][3:])/60, row[7])
-                            nmea_quality = int(row[8])
-                            nsv = int(row[9])
-                            hdop = float(row[10])
-                            antenna_height = float(row[11])
+                            nmea_quality = 1
+                            valid_cksum = 1
+                            valid_parse = 1
 
                         except Exception as err:
                             logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
                             logging.debug(str(err))
-                            parse_error_lines.append(csv_reader.line_num)
-                            continue
 
                         pos_into_df['iso_time'].append(timestamp)
                         pos_into_df['sensor_time'].append(timestamp)
@@ -141,7 +118,39 @@ class Nav03Parser(NavParser):
                         pos_into_df['nsv'].append(nsv)
                         pos_into_df['hdop'].append(hdop)
                         pos_into_df['antenna_height'].append(antenna_height)
-                        pos_into_df['valid_cksum'].append(1)
+                        pos_into_df['valid_cksum'].append(valid_cksum)
+                        pos_into_df['valid_parse'].append(valid_parse)
+
+                    elif row[2] == '$GPGGA':
+
+                        if len(row) != len(raw_gga_cols):
+                            logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
+
+                        try:
+                            timestamp = datetime.strptime("%s %s" % (row[0], row[1]), TIMESTAMP_FORMAT)
+                            ship_latitude = self._hemisphere_correction(float(row[4][:2]) + float(row[4][2:])/60, row[5])
+                            ship_longitude = self._hemisphere_correction(float(row[6][:3]) + float(row[6][3:])/60, row[7])
+                            nmea_quality = int(row[8])
+                            nsv = int(row[9])
+                            hdop = float(row[10])
+                            antenna_height = float(row[11])
+                            valid_cksum = 1
+                            valid_parse = 1
+
+                        except Exception as err:
+                            logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
+                            logging.debug(str(err))
+
+                        pos_into_df['iso_time'].append(timestamp)
+                        pos_into_df['sensor_time'].append(timestamp)
+                        pos_into_df['ship_latitude'].append(ship_latitude)
+                        pos_into_df['ship_longitude'].append(ship_longitude)
+                        pos_into_df['nmea_quality'].append(nmea_quality)
+                        pos_into_df['nsv'].append(nsv)
+                        pos_into_df['hdop'].append(hdop)
+                        pos_into_df['antenna_height'].append(antenna_height)
+                        pos_into_df['valid_cksum'].append(valid_cksum)
+                        pos_into_df['valid_parse'].append(valid_parse)
 
         except Exception as err:
             logging.error("Problem accessing input file: %s", filepath)
@@ -150,4 +159,4 @@ class Nav03Parser(NavParser):
 
         logging.debug("Finished parsing data file")
 
-        return pos_into_df, parse_error_lines
+        return pos_into_df

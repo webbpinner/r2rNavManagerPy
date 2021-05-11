@@ -81,9 +81,6 @@ class Nav33Parser(NavParser):
         Process the provided file
         """
 
-        # Line with parsing errors
-        parse_error_lines = []
-
         # Empty array to populate with parsed data
         raw_into_df = { value: [] for key, value in enumerate(self._parse_cols) }
 
@@ -94,7 +91,6 @@ class Nav33Parser(NavParser):
                 for lineno, line in enumerate(reader):
 
                     try:
-
                         timestamp = datetime.strptime(line['timestamp'], TIMESTAMP_FORMAT)
                         sensor_timestamp = datetime.strptime(line['sensor_time'], SENSOR_TIMESTAMP_FORMAT)
                         latitude = (self._hemisphere_correction(float(line['latitude'][:2]) + float(line['latitude'][2:])/60, line['NS']))
@@ -104,11 +100,21 @@ class Nav33Parser(NavParser):
                         hdop = float(line['hdop'])
                         antenna_height = float(line['antenna_height'])
                         valid_cksum = self._verify_checksum(line)
+                        valid_parse = 1
 
                     except Exception as err:
-                        logging.warning("Parsing Error: (line: %s) %s", lineno, ','.join(line))
+                        logging.warning("Parsing Error: (line: %s) %s", lineno, line)
                         logging.debug(str(err))
-                        parse_error_lines.append(lineno)
+                        timestamp = None
+                        sensor_timestamp = None
+                        latitude = None
+                        longitude = None
+                        nmea_quality = None
+                        nsv = None
+                        hdop = None
+                        antenna_height = None
+                        valid_cksum = None
+                        valid_parse = 0
 
                     else:
                         raw_into_df['iso_time'].append(timestamp)
@@ -128,4 +134,4 @@ class Nav33Parser(NavParser):
 
         logging.debug("Finished parsing data file")
 
-        return raw_into_df, parse_error_lines
+        return raw_into_df

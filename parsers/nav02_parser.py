@@ -80,9 +80,6 @@ class Nav02Parser(NavParser):
         Process the provided file
         """
 
-        # Line with parsing errors
-        parse_error_lines = []
-
         # Empty array to populate with parsed data
         raw_into_df = { value: [] for key, value in enumerate(self._parse_cols) }
 
@@ -105,11 +102,22 @@ class Nav02Parser(NavParser):
                         valid_cksum = self._verify_checksum(line)
 
                     except Exception as err:
-                        logging.warning("Parsing Error: (line: %s) %s", lineno, ','.join(line))
+
+                        logging.warning("Parsing Error: (line: %s) %s", lineno, line)
                         logging.debug(str(err))
-                        parse_error_lines.append(lineno)
+                        raw_into_df['iso_time'].append(None)
+                        raw_into_df['sensor_time'].append(None)
+                        raw_into_df['ship_latitude'].append(None)
+                        raw_into_df['ship_longitude'].append(None)
+                        raw_into_df['nmea_quality'].append(None)
+                        raw_into_df['nsv'].append(None)
+                        raw_into_df['hdop'].append(None)
+                        raw_into_df['antenna_height'].append(None)
+                        raw_into_df['valid_cksum'].append(None)
+                        raw_into_df['valid_parse'].append(0)
 
                     else:
+
                         raw_into_df['iso_time'].append(timestamp)
                         raw_into_df['sensor_time'].append(sensor_timestamp)
                         raw_into_df['ship_latitude'].append(latitude)
@@ -119,12 +127,14 @@ class Nav02Parser(NavParser):
                         raw_into_df['hdop'].append(hdop)
                         raw_into_df['antenna_height'].append(antenna_height)
                         raw_into_df['valid_cksum'].append(valid_cksum)
+                        raw_into_df['valid_parse'].append(1)
 
         except Exception as err:
             logging.error("Problem accessing input file: %s", filepath)
+            raise err
             logging.error(str(err))
             return None
 
         logging.debug("Finished parsing data file")
 
-        return raw_into_df, parse_error_lines
+        return raw_into_df
