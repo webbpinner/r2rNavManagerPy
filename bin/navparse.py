@@ -30,7 +30,7 @@ sys.path.append(dirname(dirname(realpath(__file__))))
 import pandas as pd
 
 from lib.utils import build_file_list, is_valid_nav_format
-from lib.nav_manager import NavFileReport
+from lib.nav_manager import NavInfoReport
 from parsers.nav01_parser import Nav01Parser
 from parsers.nav02_parser import Nav02Parser
 from parsers.nav03_parser import Nav03Parser
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         for file in fileList:
             logging.info("Parsing data file: %s", file)
 
-            results, parse_errors = nav_parser.parse_file(file)
+            results = nav_parser.parse_file(file)
 
             if results is None:
                 logging.warning("Problem parsing file: %s", file)
@@ -124,8 +124,8 @@ if __name__ == "__main__":
             df = pd.DataFrame(results)
 
             # Set lines with parsing errors
-            fileReport = NavFileReport(file)
-            fileReport.build_report(df, parse_errors=parse_errors)
+            fileReport = NavInfoReport(file)
+            fileReport.build_report(df)
 
             nav_parser.add_file_report(fileReport)
 
@@ -148,7 +148,7 @@ if __name__ == "__main__":
             logging.info("Processing data")
             nav_parser.proc_dataframe()
 
-        logging.info("File report(s):\n%s", '\n'.join([str(report) for report in nav_parser.file_report]))
+        logging.info("NavInfo Report(s):\n%s", '\n'.join([str(report) for report in nav_parser.file_report]))
 
         if parsed_args.logfile:
             logging.info("Saving file report to %s in %s format", parsed_args.logfile, parsed_args.logfileformat)
@@ -189,16 +189,12 @@ if __name__ == "__main__":
 
 
         else:
+
             logging.info("Send data to stdout in csv format")
             output = StringIO()
             nav_parser.dataframe.to_csv(output, index=False, date_format='%Y-%m-%dT%H:%M:%S.%fZ')
             output.seek(0)
             print(output.read())
-
-        # logging.info("Datatypes:\n%s" % nav_parser.dataframe.dtypes)
-
-        # logging.info(nav_parser.dataframe)
-
 
     except KeyboardInterrupt:
         logging.warning('Interrupted')
