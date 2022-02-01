@@ -26,6 +26,7 @@ from os.path import dirname, realpath
 sys.path.append(dirname(dirname(realpath(__file__))))
 
 from lib.nav_manager import NavParser
+from lib.utils import hemisphere_correction, verify_checksum
 
 DESCRIPTION = "Nav parser for GGA data prefixed with the SCS formatted timestamp (mm/dd/YYYY,HH:MM:SS.sss) and comma (,)"
 
@@ -37,7 +38,7 @@ EXAMPLE_DATA = """
 
 raw_cols = ['date','time','hdr','sensor_time','latitude','NS','longitude','EW','nmea_quality','nsv','hdop','antenna_height','antenna_height_m','height_wgs84','height_wgs84_m','last_update','dgps_station_checksum'] # SCS style
 
-TIMESTAMP_FORMAT = "%m/%d/%Y %H:%M:%S.%f"
+TIMESTAMP_FORMAT = "%m/%d/%Y,%H:%M:%S.%f"
 
 SENSOR_TIMESTAMP_FORMAT = "%H%M%S.%f"
 
@@ -50,29 +51,6 @@ class Nav02Parser(NavParser):
     def __init__(self):
         super().__init__(name="nav02", description=DESCRIPTION, example_data=EXAMPLE_DATA)
         self._raw_cols = raw_cols
-
-    @staticmethod
-    def _hemisphere_correction(coordinate, hemisphere):
-        if hemisphere in ('W', "S"):
-            return coordinate * -1.0
-
-        return coordinate
-
-
-    @staticmethod
-    def _verify_checksum(line):
-        sentence = ",".join([v for k, v in line.items()][1:])
-        cksum = sentence[len(sentence) - 2:]
-        chksumdata = re.sub("(\n|\r\n)","", sentence[sentence.find("$")+1:sentence.find("*")])
-
-        csum = 0
-
-        for char in chksumdata:
-            # XOR'ing value of csum against the next char in line
-            # and storing the new XOR value in csum
-            csum ^= ord(char)
-
-        return 1 if hex(csum) == hex(int(cksum, 16)) else 0
 
 
     def parse_file(self, filepath): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
@@ -91,15 +69,15 @@ class Nav02Parser(NavParser):
 
                     try:
 
-                        timestamp = datetime.strptime(line['date'] + ' ' + line['time'], TIMESTAMP_FORMAT)
+                        timestamp = datetime.strptime(line['date'] + ',' + line['time'], TIMESTAMP_FORMAT)
                         sensor_timestamp = datetime.strptime(line['sensor_time'], SENSOR_TIMESTAMP_FORMAT)
-                        latitude = (self._hemisphere_correction(float(line['latitude'][:2]) + float(line['latitude'][2:])/60, line['NS']))
-                        longitude = (self._hemisphere_correction(float(line['longitude'][:3]) + float(line['longitude'][3:])/60, line['EW']))
+                        latitude = (self.hemisphere_correction(float(line['latitude'][:2]) + float(line['latitude'][2:])/60, line['NS']))
+                        longitude = (self.hemisphere_correction(float(line['longitude'][:3]) + float(line['longitude'][3:])/60, line['EW']))
                         nmea_quality = int(line['nmea_quality'])
                         nsv = int(line['nsv'])
                         hdop = float(line['hdop'])
                         antenna_height = float(line['antenna_height'])
-                        valid_cksum = self._verify_checksum(line)
+                        valid_cksum = self.verify_checksum(line)
 
                     except Exception as err:
 

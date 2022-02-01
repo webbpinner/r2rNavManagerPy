@@ -27,6 +27,7 @@ from os.path import dirname, realpath
 sys.path.append(dirname(dirname(realpath(__file__))))
 
 from lib.nav_manager import NavParser
+from lib.utils import hemisphere_correction
 
 DESCRIPTION = "Nav parser for GLL data prefixed with the SCS formatted timestamp (mm/dd/YYYY,HH:MM:SS.sss) and comma (,).  Data may contain random NMEA0183 GGA, VTG and ZDA sentences.  None of the sentences contain trailing checksums."
 
@@ -45,7 +46,7 @@ raw_gll_cols = ['date','time','hdr','latitude','NS','longitude','EW']
 raw_vtg_cols = ['date','time','hdr','heading_true','True','heading_mag','Mag','speed_kts','Knots','speed_kph','Kph']
 raw_zda_cols = ['date','time','hdr','sensor_time','day','month','year','tz_hr','tz_min']
 
-TIMESTAMP_FORMAT = "%m/%d/%Y %H:%M:%S.%f"
+TIMESTAMP_FORMAT = "%m/%d/%Y,%H:%M:%S.%f"
 
 class Nav03Parser(NavParser):
     '''
@@ -57,14 +58,6 @@ class Nav03Parser(NavParser):
 
     def __init__(self):
         super().__init__(name="nav03", description=DESCRIPTION, example_data=EXAMPLE_DATA)
-
-
-    @staticmethod
-    def _hemisphere_correction(coordinate, hemisphere):
-        if hemisphere in ('W', "S"):
-            return coordinate * -1.0
-
-        return coordinate
 
 
     def parse_file(self, filepath): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
@@ -99,9 +92,9 @@ class Nav03Parser(NavParser):
                             valid_parse = 0
 
                         try:
-                            timestamp = datetime.strptime(row[0] + ' ' + row[1], TIMESTAMP_FORMAT)
-                            ship_latitude = self._hemisphere_correction(float(row[3][:2]) + float(row[3][2:])/60, row[4])
-                            ship_longitude = self._hemisphere_correction(float(row[5][:3]) + float(row[5][3:])/60, row[6])
+                            timestamp = datetime.strptime(row[0] + ',' + row[1], TIMESTAMP_FORMAT)
+                            ship_latitude = self.hemisphere_correction(float(row[3][:2]) + float(row[3][2:])/60, row[4])
+                            ship_longitude = self.hemisphere_correction(float(row[5][:3]) + float(row[5][3:])/60, row[6])
                             nmea_quality = 1
                             valid_cksum = 1
                             valid_parse = 1
@@ -128,8 +121,8 @@ class Nav03Parser(NavParser):
 
                         try:
                             timestamp = datetime.strptime("%s %s" % (row[0], row[1]), TIMESTAMP_FORMAT)
-                            ship_latitude = self._hemisphere_correction(float(row[4][:2]) + float(row[4][2:])/60, row[5])
-                            ship_longitude = self._hemisphere_correction(float(row[6][:3]) + float(row[6][3:])/60, row[7])
+                            ship_latitude = self.hemisphere_correction(float(row[4][:2]) + float(row[4][2:])/60, row[5])
+                            ship_longitude = self.hemisphere_correction(float(row[6][:3]) + float(row[6][3:])/60, row[7])
                             nmea_quality = int(row[8])
                             nsv = int(row[9])
                             hdop = float(row[10])

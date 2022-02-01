@@ -148,3 +148,24 @@ def read_r2rnavfile(file, file_format='csv'):
             logging.error(str(err))
 
     return None
+
+
+def hemisphere_correction(coordinate, hemisphere):
+    if hemisphere in ('W', "S"):
+        return coordinate * -1.0
+
+    return coordinate
+
+
+def verify_checksum(sentence):
+    cksum = sentence[len(sentence) - 2:]
+    chksumdata = re.sub("(\n|\r\n)","", sentence[sentence.find("$")+1:sentence.find("*")])
+
+    csum = 0
+
+    for char in chksumdata:
+        # XOR'ing value of csum against the next char in line
+        # and storing the new XOR value in csum
+        csum ^= ord(char)
+
+    return 1 if hex(csum) == hex(int(cksum, 16)) else 0

@@ -31,7 +31,7 @@ from geopy import Point
 from geopy.distance import distance
 
 from lib.nav_manager import NavParser, R2RNAV_COLS
-from lib.utils import calculate_bearing
+from lib.utils import calculate_bearing, hemisphere_correction, verify_checksum
 
 DESCRIPTION = "Nav parser for raw output from a Furuno GP-90D GPS reciever. Data file contains GGA/ZDA/VTG NMEA0183 sentences with no additional information added."
 
@@ -59,29 +59,6 @@ class Nav01Parser(NavParser):
 
     def __init__(self):
         super().__init__(name="nav01", description=DESCRIPTION, example_data=EXAMPLE_DATA)
-
-
-    @staticmethod
-    def _hemisphere_correction(coordinate, hemisphere):
-        if hemisphere in ('W', "S"):
-            return coordinate * -1.0
-
-        return coordinate
-
-
-    @staticmethod
-    def _verify_checksum(sentence):
-        cksum = sentence[len(sentence) - 2:]
-        chksumdata = re.sub("(\n|\r\n)","", sentence[sentence.find("$")+1:sentence.find("*")])
-
-        csum = 0
-
-        for char in chksumdata:
-            # XOR'ing value of csum against the next char in line
-            # and storing the new XOR value in csum
-            csum ^= ord(char)
-
-        return 1 if hex(csum) == hex(int(cksum, 16)) else 0
 
 
     def parse_file(self, filepath): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
@@ -155,13 +132,13 @@ class Nav01Parser(NavParser):
                         else:
                             try:
                                 sensor_time = datetime.strptime(row[1], SENSOR_TIMESTAMP_FORMAT)
-                                ship_latitude = self._hemisphere_correction(float(row[2][:2]) + float(row[2][2:])/60, row[3])
-                                ship_longitude = self._hemisphere_correction(float(row[4][:3]) + float(row[4][3:])/60, row[5])
+                                ship_latitude = self.hemisphere_correction(float(row[2][:2]) + float(row[2][2:])/60, row[3])
+                                ship_longitude = self.hemisphere_correction(float(row[4][:3]) + float(row[4][3:])/60, row[5])
                                 nmea_quality = int(row[6])
                                 nsv = int(row[7])
                                 hdop = float(row[8])
                                 antenna_height = float(row[9])
-                                valid_cksum = self._verify_checksum(','.join(row))
+                                valid_cksum = self.verify_checksum(','.join(row))
                                 valid_parse = 1
 
                             except Exception as err:
@@ -215,6 +192,7 @@ class Nav01Parser(NavParser):
         logging.debug("Finished parsing data file")
 
         return data
+
 
     def proc_dataframe(self):
         """
