@@ -92,7 +92,7 @@ navqa.py create a quality assurance report from a r2rnav file that shows the var
 ### navexport.py
 navexport.py creates the various r2rNavManager products from a r2rnav file such as bestres, 1min, and control.
 
-    usage: navexport.py [-h] [-v] [-o outfile] [-O outfileformat] [-m [metadatafile ...]] [-q]
+    usage: navexport.py [-h] [-v] [-o outfile] [-O outfileformat] [-m [metadata ...]] [-q]
                         [-t outputtype] [--startTS startTS] [--endTS endTS] [-g gapthreshold]
                         [-s speedthreshold] [-a accelerationthreshold] [-I inputformat] input
 
@@ -108,7 +108,7 @@ navexport.py creates the various r2rNavManager products from a r2rnav file such 
                             Write output to specified outfile
       -O outfileformat, --outfileformat outfileformat
                             The outfile format: csv or geocsv, default: geocsv
-      -m [metadatafile ...], --meta [metadatafile ...]
+      -m [metadata ...], --meta [metadata ...]
                             Add custom metadata to the geocsv header, overrides default vaules, format: "key=value"
       -q, --qc              Exclude bad data points before exporting data
       -t outputtype, --type outputtype
