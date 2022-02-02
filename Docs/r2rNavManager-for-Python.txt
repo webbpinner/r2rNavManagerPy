@@ -1,0 +1,297 @@
+r2rNavManager for Python
+
+
+Questions:
+Is the r2rnav formation still the tab-delimited format or the GeoCSV format in the bestres files?
+What is the log file contents for navqc?
+Distance from Port Start?
+Distance from Port End?
+Possible Number of Epochs with Observations:?
+Actual Number of Epochs with Observations:?
+Actual Countable Number of Epoch with Observations:?
+Absent Number of Epochs with Observations:?
+Flagged Number of Epochs with Observations:?
+Percent Completeness:?
+
+
+Utilities:
+#### navformat ####
+Displays various raw postion formats
+-------------------------------------------------------------------------------
+Usage: navformat [-f <format>] [-h]
+
+Required:
+	-f or --format <format>
+		Format specifier.  (See list of supported formats below.)
+
+Options:
+	-h or --help		Show this help.
+
+Input format specifier:
+	nav1	raw NMEA: ZDA + GGA
+	nav2	DAS: NOAA Shipboard Computer System (SCS): external clock + GGA
+	nav3	DAS: NOAA Shipboard Computer System (SCS): external clock + GLL only (pending)
+	nav4	DAS: WHOI Calliope (Atlantis, Knorr)
+	nav5	DAS: WHOI Calliope (Oceanus)
+	nav6	DAS: UDel Surface Mapping System (SMS)
+	nav7	DAS: UH-specific (KOK) (pending)
+	...
+-------------------------------------------------------------------------------
+
+#### navcopy ####
+Converts directory of raw files to the r2rnav format.  The r2rnav format is
+used for all subsequent operations
+-------------------------------------------------------------------------------
+Usage: navcopy.php -i | <input file> -d <data_diretory> -f <format> -o <outifle> [-t <time range>] [-h]
+
+Required:
+	-i <input file>
+		Path to raw navigation data file.
+	-d <data_directory>
+		Path to directory containing raw navigation data files.
+	-f <format>
+		The format of raw navigation files. (see navformat)
+	-o <outfile>
+		The destination filename for the raw r2rnav file.
+
+Options
+	-t <start_time/end_time>
+		The time interval which to sample at.
+		Format: [yyyy]-[mm]-[dd]T[hh]:[mm]:[ss]Z/[yyyy]-[mm]-[dd]T[hh]:[mm]:[ss]Z
+		Example: -t 2014-03-01T00:00:00Z/2014-03-12T00:00:00Z
+	-h or --help
+		Show this help message.
+-------------------------------------------------------------------------------
+
+#### navinfo ####
+Return information based on r2rnav formated file to stdout unless -l or -j
+defined.
+-------------------------------------------------------------------------------
+Usage: navinfo.php -i <input file> [-l <log file>] [-j <json file>] [-h]
+
+Required:
+	-i <input file>
+		Path to raw navigation data file.
+
+Options
+	-l <log file>
+		Output navinfo data in plain text to log file
+
+	-j <json file>
+		Output navinfo data in json format to json file
+
+	-h or --help
+		Show this help message.
+-------------------------------------------------------------------------------
+
+Output (plain text):
+Navigation Start/End Info:
+		Start Date:		2014-04-14T03:09:18Z
+		End Date:		2014-04-19T07:56:19Z
+		Start Lat/Lon:	[7.321518,134.453960]
+		End Lat/Lon:	[25.157400,121.759700]
+
+Navigation Bounding Box Info:
+		Minimum Longitude:		121.741245
+		Maximum Longitude:		134.493262
+		Minimum Latitude:		7.321387
+		Maximum Latitude:		25.229615
+
+#### navqa ####
+Quality assess navigation data in the common r2rnav raw file format.
+-------------------------------------------------------------------------------
+Usage: navqa.php -i <infile> [-v <speed_threshold>] [-a <acceleration_threshold>] [-g <gap_threshold>] [-l <log file>] [-j <json file>] [-x <xml file>] [-h]
+
+Required:
+	-i <infile>
+		The r2rnav file to be quality assessed.
+Options:
+	-v or --max_speed <speed_threshold>
+		Specify the maximum allowable velocity in m/s. Default: "<MAX_SPEED>"
+
+	-a or --max_accel <acceleration_threshold>
+		Specify the maximum allowable acceleration in m/s^2. Default: "<MAX_ACCEL>"
+
+	-g or --max_gap <gap_threshold>
+		Specify the maximum allowable time gap in data in seconds. Default: "<MAX_GAP>"
+
+	-l or --logfile <log file>
+		Specify a verbose logfile.
+
+	-j or --jsonfile <json file>
+		Specify a json file for the qa report.
+
+	-x or --xmlfile <xml file>
+		Specify a xml file for the qa report.
+
+	-h or --help
+		Show this help message.
+-------------------------------------------------------------------------------
+
+Output (plain text):
+Duration and range of values:
+Epoch interval: 1.00 s
+Maximum Altitude: 37.157 m
+Minimum Altitude: 25.453 m
+Maximum Horizontal Speed: 7.75 m/s
+Minimum Horizontal Speed: 0.00 m/s
+Maximum Horizontal Acceleration: 1.808 m/s^2
+Minimum Horizontal Acceleration: -1.292 m/s^2
+Distance from Port Start: 0.0 m
+Distance from Port End: 0.0 m
+First epoch: 2019-10-06T02:20:08.00Z
+Last epoch: 2019-10-09T06:24:23.00Z
+Possible Number of Epochs with Observations:
+Actual Number of Epochs with Observations:
+Actual Countable Number of Epoch with Observations:
+Absent Number of Epochs with Observations:
+Flagged Number of Epochs with Observations:
+Number of satellites:
+Maximum Number of Satellites: 21
+Minimum Number of Satellites: 6
+Maximum HDOP: 1.7
+Minimum HDOP: 0.6
+
+Qualtiy Assessment:
+Longest epoch gap: 93.00 s
+Number of Gaps Longer than Threshold: 1
+Percentage of Gaps Longer than Threshold: 0.01 percent
+Number of Epochs Out of Sequence: 0
+Percent records out of sequence: 0.00 percent
+Number of Epochs with Bad GPS Quality Indicator: 0
+Percent records with Bad GPS Quality Indicator: 0.00 percent
+Number of Horizontal Speeds Exceeding Threshold: 
+Percent Unreasonable Horizontal Speeds: 0.00 percent
+Number of Horizontal Accelerations Exceeding Threshold: 
+Percent Unreasonable Horizontal Accelerations: 0.00 percent
+Percent Completeness: 99.96 percent
+
+
+#### navqc ####
+Flags undesirable points, create new r2rnav file with bad points identified
+-------------------------------------------------------------------------------
+Usage: navqc.php -i <infile> -o <outfile< [-v <speed_threshold>] [-a <acceleration_threshold>] [-g <gap_threshold>] [-l <logfile>] [-h]
+
+Required:
+	-i <infile>
+		The r2rnav file to be quality assessed.
+
+	-o <outfile>
+		The destination for the qualtiy controlled r2rnav product.
+
+Options:
+	-v or --max_speed <speed_threshold>
+		Specify the maximum allowable velocity in m/s. Default: "<MAX_SPEED>"
+
+	-a or --max_accel <acceleration_threshold>
+		Specify the maximum allowable acceleration in m/s^2. Default: "<MAX_ACCEL>"
+
+	-l or --logfile <logfile>
+		Specify a logfile for the qc report.
+
+	-h or --help
+		Show this help message.
+-------------------------------------------------------------------------------
+
+r2rnav format:
+(1) a single string for date and time (iso8601),
+(2) longitude, decimal degrees
+(3) latitude, decimal degrees
+(4) GPS quality indicator (defined by NMEA-0183) *
+(5) number of GPS satellites
+(6) horizontal dilution of precision
+(7) the GPS antenna height above/below mean sea level [meters]
+(8) instantaneous speed-over-ground 
+(9) instantaneous course-over-ground
+
+* NMEA-0183 definition of GPS quality indicator:
+
+The National Marine Electronics Association has defined the following values 
+for the GPS quality indicator:
+
+0 = fix not available or invalid
+1 = GPS Standard Positioning Service (SPS) mode, fix valid
+2 = differential GPS, SPS mode, fix valid
+3 = GPS Precise Positioning Service (PPS) mode, fix valid
+4 = Real Time Kinematic (RTK). Satellite system used in RTK mode with fixed 
+integers
+5 = Float RTK. Satellite system used in RTK mode with floating integers
+6 = Estimated (dead reckoning) mode
+7 = Manual input mode
+8 = Simulator mode
+
+Output:
+
+<cruiseID>_bestres.geoCSV
+#dataset: GeoCSV 2.0
+#title: Processed Trackline Navigation Data: Best Resolution
+#field_unit: ISO_8601,degree_east,degree_north,(unitless),(unitless),(unitless),meter,meter\second,degree
+#field_type: datetime,float,float,integer,integer,float,float,float,float
+#field_standard_name: iso_time,ship_longitude,ship_latitude,nmea_quality,nsv,hdop,antenna_height,speed_made_good,course_made_good
+#field_long_name: date and time,longitude of vessel,latitude of vessel,NMEA quality indicator,number of satellite vehicles observed,horizontal dilution of precision,height of antenna above mean sea level,course made good,speed made good
+#standard_name_cv: http://www.rvdata.us/voc/fieldname
+#ellipsoid: WGS-84 (EPSG:4326)
+#delimiter: ,
+#field_missing: NAN
+#attribution: Rolling Deck to Repository (R2R) Program; http://www.rvdata.us/
+#source_repository: doi:10.17616/R39C8D
+#source_event: doi:10.7284/908273
+#source_dataset: doi:10.7284/133064
+#cruise_id: FK190315
+#creation_date: 2019-10-16T16:59:56Z
+iso_time,ship_longitude,ship_latitude,nmea_quality,nsv,hdop,antenna_height,speed_made_good,course_made_good
+2019-03-19T13:13:02.00Z,-118.97600612,24.72714730,2,15,0.8,-25.4,0.00,294.758
+2019-03-19T13:13:02.50Z,-118.97603100,24.72715778,2,15,0.8,-25.495,5.54,295.220
+2019-03-19T13:13:03.00Z,-118.97605585,24.72716847,2,15,0.8,-25.594,5.56,295.021
+2019-03-19T13:13:03.50Z,-118.97608062,24.72717903,2,15,0.8,-25.662,5.53,295.048
+2019-03-19T13:13:04.00Z,-118.97610543,24.72718962,2,15,0.8,-25.674,5.54,294.770
+
+
+<cruiseID>_1min.geoCSV
+#dataset: GeoCSV 2.0
+#title: Processed Trackline Navigation Data: One Minute Resolution
+#field_unit: ISO_8601,degree_east,degree_north,meter/second,degree
+#field_type: datetime,float,float,float,float
+#field_standard_name: iso_time,ship_longitude,ship_latitude,speed_made_good,course_made_good
+#field_long_name: date and time,longitude of vessel,latitude of vessel,course made good,speed made good
+#standard_name_cv: http://www.rvdata.us/voc/fieldname
+#ellipsoid: WGS-84 (EPSG:4326)
+#delimiter: ,
+#field_missing: NAN
+#attribution: Rolling Deck to Repository (R2R) Program; http://www.rvdata.us/
+#source_repository: doi:10.17616/R39C8D
+#source_event: doi:10.7284/908273
+#source_dataset: doi:10.7284/133064
+#cruise_id: FK190315
+#creation_date: 2019-10-16T17:22:15Z
+iso_time,ship_longitude,ship_latitude,speed_made_good,course_made_good
+2019-03-19T13:13:02.00Z,-118.97600612,24.72714730,0.00,294.758
+2019-03-19T13:14:00.00Z,-118.97892645,24.72830543,5.56,291.084
+2019-03-19T13:15:00.00Z,-118.98193595,24.72951233,5.54,294.341
+2019-03-19T13:16:00.00Z,-118.98493005,24.73074472,5.62,294.947
+2019-03-19T13:17:00.00Z,-118.98794455,24.73191962,5.49,293.753
+
+
+<cruiseID>_control.geoCSV
+#dataset: GeoCSV 2.0
+#title: Processed Trackline Navigation Data: Control Points
+#field_unit: ISO_8601,degree_east,degree_north
+#field_type: datetime,float,float
+#field_standard_name: iso_time,ship_longitude,ship_latitude
+#field_long_name: date and time,longitude of vessel,latitude of vessel
+#standard_name_cv: http://www.rvdata.us/voc/fieldname
+#ellipsoid: WGS-84 (EPSG:4326)
+#delimiter: ,
+#field_missing: NAN
+#attribution: Rolling Deck to Repository (R2R) Program; http://www.rvdata.us/
+#source_repository: doi:10.17616/R39C8D
+#source_event: doi:10.7284/908273
+#source_dataset: doi:10.7284/133064
+#cruise_id: FK190315
+#creation_date: 2019-10-16T17:23:07Z
+iso_time,ship_longitude,ship_latitude
+2019-03-19T13:13:02.00Z,-118.97600612,24.7271473
+2019-03-19T15:24:00.00Z,-119.3499591,24.8788564
+2019-03-19T15:38:00.00Z,-119.31281423,24.89499662
+2019-03-19T16:16:00.00Z,-119.20213797,24.85207228
+2019-03-19T16:38:00.00Z,-119.23075623,24.79654743

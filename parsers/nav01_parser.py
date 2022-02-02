@@ -132,13 +132,13 @@ class Nav01Parser(NavParser):
                         else:
                             try:
                                 sensor_time = datetime.strptime(row[1], SENSOR_TIMESTAMP_FORMAT)
-                                ship_latitude = self.hemisphere_correction(float(row[2][:2]) + float(row[2][2:])/60, row[3])
-                                ship_longitude = self.hemisphere_correction(float(row[4][:3]) + float(row[4][3:])/60, row[5])
+                                ship_latitude = hemisphere_correction(float(row[2][:2]) + float(row[2][2:])/60, row[3])
+                                ship_longitude = hemisphere_correction(float(row[4][:3]) + float(row[4][3:])/60, row[5])
                                 nmea_quality = int(row[6])
                                 nsv = int(row[7])
                                 hdop = float(row[8])
                                 antenna_height = float(row[9])
-                                valid_cksum = self.verify_checksum(','.join(row))
+                                valid_cksum = verify_checksum(row)
                                 valid_parse = 1
 
                             except Exception as err:

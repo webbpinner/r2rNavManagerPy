@@ -92,9 +92,9 @@ class Nav03Parser(NavParser):
                             valid_parse = 0
 
                         try:
-                            timestamp = datetime.strptime(row[0] + ',' + row[1], TIMESTAMP_FORMAT)
-                            ship_latitude = self.hemisphere_correction(float(row[3][:2]) + float(row[3][2:])/60, row[4])
-                            ship_longitude = self.hemisphere_correction(float(row[5][:3]) + float(row[5][3:])/60, row[6])
+                            timestamp = datetime.strptime("%s,%s" % (row[0], row[1]), TIMESTAMP_FORMAT)
+                            ship_latitude = hemisphere_correction(float(row[3][:2]) + float(row[3][2:])/60, row[4])
+                            ship_longitude = hemisphere_correction(float(row[5][:3]) + float(row[5][3:])/60, row[6])
                             nmea_quality = 1
                             valid_cksum = 1
                             valid_parse = 1
@@ -120,9 +120,9 @@ class Nav03Parser(NavParser):
                             logging.warning("Parsing Error: (line: %s) %s", csv_reader.line_num, ','.join(row))
 
                         try:
-                            timestamp = datetime.strptime("%s %s" % (row[0], row[1]), TIMESTAMP_FORMAT)
-                            ship_latitude = self.hemisphere_correction(float(row[4][:2]) + float(row[4][2:])/60, row[5])
-                            ship_longitude = self.hemisphere_correction(float(row[6][:3]) + float(row[6][3:])/60, row[7])
+                            timestamp = datetime.strptime("%s,%s" % (row[0], row[1]), TIMESTAMP_FORMAT)
+                            ship_latitude = hemisphere_correction(float(row[4][:2]) + float(row[4][2:])/60, row[5])
+                            ship_longitude = hemisphere_correction(float(row[6][:3]) + float(row[6][3:])/60, row[7])
                             nmea_quality = int(row[8])
                             nsv = int(row[9])
                             hdop = float(row[10])

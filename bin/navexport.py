@@ -59,8 +59,22 @@ if __name__ == "__main__":
     parsed_args.verbosity = min(parsed_args.verbosity, max(LOG_LEVELS))
     logging.getLogger().setLevel(LOG_LEVELS[parsed_args.verbosity])
 
-    navexport = NavExport(parsed_args.input, delta_t_threshold=parsed_args.gapthreshold, speed_threshold=parsed_args.speedthreshold, acceleration_threshold=parsed_args.accelerationthreshold)
 
+    metadata = {
+        'creation_date': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        'delta_t_threshold': parsed_args.gapthreshold,
+        'speed_threshold': parsed_args.speedthreshold,
+        'acceleration_threshold': parsed_args.accelerationthreshold
+    }
+
+    if parsed_args.meta:
+        for data in parsed_args.meta:
+            key, value = data.split('=')
+            metadata[key] = value
+
+    logging.debug("Metadata: %s", metadata)
+
+    navexport = NavExport(parsed_args.input, delta_t_threshold=metadata['delta_t_threshold'], speed_threshold=metadata['speed_threshold'], acceleration_threshold=metadata['acceleration_threshold'])
 
     try:
 
@@ -71,15 +85,6 @@ if __name__ == "__main__":
         except Exception as err:
             logging.error("Unable to read input file")
             raise err
-
-        custom_meta = { 'creation_date': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ") }
-
-        if parsed_args.meta:
-            for data in parsed_args.meta:
-                key, value = data.split('=')
-                custom_meta[key] = value
-
-        logging.debug("Custom meta: %s", custom_meta)
 
         if parsed_args.startTS or parsed_args.endTS:
             try:
@@ -119,7 +124,7 @@ if __name__ == "__main__":
                         navexport.data.to_csv(out_file, index=False, na_rep='NAN', date_format='%Y-%m-%dT%H:%M:%S.%fZ')
 
                     elif parsed_args.outfileformat == 'geocsv':
-                        out_file.write(navexport.geocsv_header(custom_meta))
+                        out_file.write(navexport.geocsv_header(metadata))
                         navexport.data.to_csv(out_file, mode='a', index=False, na_rep='NAN', date_format='%Y-%m-%dT%H:%M:%S.%fZ')
 
             except IOError:
@@ -138,7 +143,7 @@ if __name__ == "__main__":
                 output = StringIO()
                 navexport.data.to_csv(output, index=False, na_rep='NAN', date_format='%Y-%m-%dT%H:%M:%S.%fZ')
                 output.seek(0)
-                print(navexport.geocsv_header(custom_meta), end='')
+                print(navexport.geocsv_header(metadata), end='')
                 print(output.read())
 
     except KeyboardInterrupt:

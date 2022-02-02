@@ -36,7 +36,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Return quality assurance information based on r2rnav formatted file')
     parser.add_argument('-v', '--verbosity', dest='verbosity', default=0, action='count', help='Increase output verbosity, default level: warning')
     parser.add_argument('-l', '--logfile', type=str, metavar='logfile', help='Write output to specified logfile')
-    parser.add_argument('-L', '--logfileformat', type=str, metavar='logfileformat', default="text", choices=["text","json"], help='The format of the logfile: text, json, default: text')
+    parser.add_argument('-L', '--logfileformat', type=str, metavar='logfileformat', default="text", choices=["text","json"], help='The format of the logfile: text, json default: text')
     parser.add_argument('--startTS', type=lambda d: datetime.strptime(d, '%Y-%m-%dT%H:%M:%S.%fZ'), metavar='startTS', help='Crop data to start timestamp, format: YYYY-mm-ddTHH:MM:SS.sssZ')
     parser.add_argument('--endTS', type=lambda d: datetime.strptime(d, '%Y-%m-%dT%H:%M:%S.%fZ'), metavar='endTS', help='Crop data to end timestamp, format: YYYY-mm-ddTHH:MM:SS.sssZ')
     parser.add_argument('-g', '--gapthreshold', type=float, default=MAX_DELTA_T,  metavar='gapthreshold', help='Set custom gap threshold in seconds')
@@ -103,6 +103,9 @@ if __name__ == "__main__":
                     elif parsed_args.logfileformat == 'json':
                         json.dump(navqa.to_json(), log_file, indent=2)
 
+                    elif parsed_args.logfileformat == 'xml':
+                        log_file.write(navqa.to_xml())
+
             except IOError:
                 logging.error("Error saving qa report file: %s", parsed_args.logfile)
 
@@ -113,7 +116,10 @@ if __name__ == "__main__":
                 print(navqa)
 
             elif parsed_args.logfileformat == 'json':
-                json.dump(navqa.to_json(), log_file, indent=2)
+                print(json.dumps(navqa.to_json(), indent=2))
+
+            elif parsed_args.logfileformat == 'xml':
+                print(navqa.to_xml())
 
     except KeyboardInterrupt:
         logging.warning('Interrupted')

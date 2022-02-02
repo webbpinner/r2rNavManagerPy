@@ -17,6 +17,7 @@ LICENSE INFO: This code is licensed under MIT license (see LICENSE.txt for detai
 '''
 
 import os
+import re
 import glob
 import math
 import logging
@@ -157,7 +158,8 @@ def hemisphere_correction(coordinate, hemisphere):
     return coordinate
 
 
-def verify_checksum(sentence):
+def verify_checksum(line):
+    sentence = ",".join(line) if isinstance(line, list) else ",".join([v for k, v in line.items()][1:])
     cksum = sentence[len(sentence) - 2:]
     chksumdata = re.sub("(\n|\r\n)","", sentence[sentence.find("$")+1:sentence.find("*")])
 

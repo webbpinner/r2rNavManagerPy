@@ -70,13 +70,13 @@ class Nav33Parser(NavParser):
                     try:
                         timestamp = datetime.strptime(line['timestamp'], TIMESTAMP_FORMAT)
                         sensor_timestamp = datetime.strptime(line['sensor_time'], SENSOR_TIMESTAMP_FORMAT)
-                        latitude = (self.hemisphere_correction(float(line['latitude'][:2]) + float(line['latitude'][2:])/60, line['NS']))
-                        longitude = (self.hemisphere_correction(float(line['longitude'][:3]) + float(line['longitude'][3:])/60, line['EW']))
+                        latitude = (hemisphere_correction(float(line['latitude'][:2]) + float(line['latitude'][2:])/60, line['NS']))
+                        longitude = (hemisphere_correction(float(line['longitude'][:3]) + float(line['longitude'][3:])/60, line['EW']))
                         nmea_quality = int(line['nmea_quality'])
                         nsv = int(line['nsv'])
                         hdop = float(line['hdop'])
                         antenna_height = float(line['antenna_height'])
-                        valid_cksum = self.verify_checksum(line)
+                        valid_cksum = verify_checksum(line)
                         valid_parse = 1
 
                     except Exception as err:

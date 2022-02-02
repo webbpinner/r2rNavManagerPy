@@ -173,7 +173,7 @@ if __name__ == "__main__":
 
                 try:
                     with open(parsed_args.outfile, 'w') as data_file:
-                        nav_parser.dataframe.to_csv(data_file, index=False, date_format='%Y-%m-%dT%H:%M:%S.%fZ')
+                        nav_parser.dataframe.to_csv(data_file, mode='a', index=False, date_format='%Y-%m-%dT%H:%M:%S.%fZ')
 
                 except IOError:
                     logging.error("Error saving data file: %s", parsed_args.outfile)

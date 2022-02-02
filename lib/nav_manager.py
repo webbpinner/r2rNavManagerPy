@@ -20,7 +20,7 @@ import logging
 from io import StringIO
 from datetime import datetime, timedelta
 
-from os.path import dirname, realpath, basename
+from os.path import dirname, realpath, basename, join
 sys.path.append(dirname(dirname(realpath(__file__))))
 
 import numpy as np
@@ -45,6 +45,8 @@ MAX_ACCEL = 1    # m/s^2
 MAX_DELTA_T = 300 # seconds
 
 RDP_EPSILON = 0.001
+
+XML_TEMPLATE = join(dirname(dirname(realpath(__file__))), 'templates', 'nav_qa_template_ver1.0.xml')
 
 rounding = {
     'ship_longitude': 8,
@@ -248,7 +250,7 @@ class NavQAReport(): # pylint: disable=too-many-instance-attributes
         self._horizontal_speed = [ dataframe['speed_made_good'].min(), dataframe['speed_made_good'].max() ]
         self._horizontal_acceleration = [ dataframe['acceleration'].min(), dataframe['acceleration'].max() ]
         self._distance_from_port = [ 0, 0 ]
-        self._timestamps = [ dataframe['iso_time'].iloc[0], dataframe['iso_time'].iloc[-1] ]
+        self._timestamps = [ dataframe['iso_time'].loc[~dataframe['iso_time'].isnull()].iloc[0], dataframe['iso_time'].iloc[-1] ]
         self._nsv = [ int(dataframe['nsv'].min()), int(dataframe['nsv'].max()) ]
         self._hdop = [ dataframe['hdop'].min(), dataframe['hdop'].max() ]
         self._delta_t = [ dataframe['deltaT'].min(), dataframe['deltaT'].max() ]
@@ -358,6 +360,41 @@ Percent Unreasonable Horizontal Accelerations: %0.3f %%\n\
             "horizontalAccelerationErrors": self._horizontal_acceleration_errors,
             "horizontalAccelerationErrorPercentage": round(self._horizontal_acceleration_errors/self._total_lines, 2) * 100
         }
+
+    def to_xml():
+        """
+        Return the report in XML format using the r2r 1.0 template.
+        """
+
+        xmltree = ET.parse(XML_TEMPLATE)
+        xmlroot = xmltree.getroot()
+
+        return None
+        
+
+        # # iterating through the price values.
+        # for prices in xmlroot.iter('price'):
+        #     # updates the price value
+        #     prices.text = str(float(prices.text)+10)
+        #     # creates a new attribute
+        #     prices.set('newprices', 'yes')
+         
+        # # creating a new tag under the parent.
+        # # xmlroot[0] here is the first food tag.
+        # ET.SubElement(xmlroot[0], 'tasty')
+        # for temp in xmlroot.iter('tasty'):
+        #     # giving the value as Yes.
+        #     temp.text = str('YES')
+         
+        # # deleting attributes in the xml.
+        # # by using pop as attrib returns dictionary.
+        # # removes the itemid attribute in the name tag of
+        # # the second food tag.
+        # xmlroot[1][0].attrib.pop('itemid')
+         
+        # # Removing the tag completely we use remove function.
+        # # completely removes the third food tag.
+        # xmlroot.remove(xmlroot[2])
 
 
 class NavExport():
