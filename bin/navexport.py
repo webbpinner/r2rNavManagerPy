@@ -36,7 +36,7 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--verbosity', dest='verbosity', default=0, action='count', help='Increase output verbosity, default level: warning')
     parser.add_argument('-o', '--outfile', type=str, metavar='outfile', help='Write output to specified outfile')
     parser.add_argument('-O', '--outfileformat', type=str, metavar='outfileformat', default="geocsv", choices=["csv","geocsv"], help='The outfile format: csv or geocsv, default: geocsv')
-    parser.add_argument('-m', '--meta', type=str, metavar='metadatafile', nargs='*', help='Add custom metadata to the geocsv header, overrides default vaules, format: "key=value"')
+    parser.add_argument('-m', '--meta', type=str, nargs='*', help='Add custom metadata to the geocsv header, overrides default vaules, format: "key=value"')
     parser.add_argument('-q', '--qc', action='store_true', help='Exclude bad data points before exporting data')
     parser.add_argument('-t', '--type', type=str, metavar='outputtype', default="bestres", choices=["bestres","1min","control"], help='The type of output to generate: bestres, 1min, control, default: bestres')
     parser.add_argument('--startTS', type=lambda d: datetime.strptime(d, '%Y-%m-%dT%H:%M:%S.%fZ'), metavar='startTS', help='Crop data to start timestamp, format: YYYY-mm-ddTHH:MM:SS.sssZ')
